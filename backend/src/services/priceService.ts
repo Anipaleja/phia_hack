@@ -13,31 +13,90 @@ import logger from "../utils/logger";
 const priceCache = new NodeCache({ stdTTL: 86400 }); // 24-hour cache
 let browser: Browser | null = null;
 
+type LaunchStrategy = {
+  name: string;
+  options: Record<string, unknown>;
+};
+
 export class PriceService {
+  private static getBaseLaunchOptions() {
+    return {
+      headless: "new" as const,
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-gpu",
+      ],
+    };
+  }
+
+  private static getLaunchStrategies(): LaunchStrategy[] {
+    const baseOptions = PriceService.getBaseLaunchOptions();
+    const strategies: LaunchStrategy[] = [];
+
+    if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+      strategies.push({
+        name: "env-executable-path",
+        options: {
+          ...baseOptions,
+          executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
+        },
+      });
+    }
+
+    // Prefer the locally installed Chrome on macOS where bundled Chromium may crash.
+    strategies.push({
+      name: "chrome-channel",
+      options: {
+        ...baseOptions,
+        channel: "chrome",
+      },
+    });
+
+    strategies.push({
+      name: "bundled-chromium",
+      options: {
+        ...baseOptions,
+      },
+    });
+
+    return strategies;
+  }
+
   /**
    * Initialize Puppeteer browser (lazy load)
    */
   private static async getBrowser(): Promise<Browser> {
     if (!browser) {
-      try {
-        browser = await puppeteer.launch({
-          headless: true,
-          args: [
-            "--no-sandbox",
-            "--disable-setuid-sandbox",
-            "--disable-dev-shm-usage",
-          ],
-        });
-        logger.info("Puppeteer browser initialized");
-      } catch (error) {
+      const launchStrategies = PriceService.getLaunchStrategies();
+      let lastError: unknown = null;
+
+      for (const strategy of launchStrategies) {
+        try {
+          browser = await puppeteer.launch(strategy.options as any);
+          logger.info("Puppeteer browser initialized", {
+            strategy: strategy.name,
+          });
+          break;
+        } catch (error) {
+          lastError = error;
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          logger.warn("Puppeteer launch strategy failed", {
+            strategy: strategy.name,
+            error: errorMsg,
+          });
+        }
+      }
+
+      if (!browser) {
         const errorMsg =
-          error instanceof Error ? error.message : String(error);
-        logger.error("Failed to initialize Puppeteer", { error: errorMsg });
-        throw new AppError(
-          "Price scraping unavailable",
-          "BROWSER_INIT_FAILED",
-          503
-        );
+          lastError instanceof Error ? lastError.message : String(lastError);
+        logger.error("Failed to initialize Puppeteer", {
+          error: errorMsg,
+          hint: "Set PUPPETEER_EXECUTABLE_PATH to a valid Chrome binary if needed",
+        });
+        throw new AppError("Price scraping unavailable", "BROWSER_INIT_FAILED", 503);
       }
     }
     return browser;

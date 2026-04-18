@@ -108,8 +108,33 @@ body {
   animation: hero-rise 0.82s cubic-bezier(0.22, 1, 0.36, 1) 0.22s both;
 }
 
-.hero-enter-4 {
-  animation: hero-rise 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.34s both;
+/** Portaled landing composer: smooth transition from inline → centered overlay */
+@keyframes landing-backdrop-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes landing-composer-sheet-enter {
+  from {
+    opacity: 0;
+    transform: translateY(1.35rem) scale(0.965);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.landing-composer-backdrop-enter {
+  animation: landing-backdrop-enter 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.landing-composer-sheet-enter {
+  animation: landing-composer-sheet-enter 0.72s cubic-bezier(0.16, 1, 0.32, 1) 0.06s both;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -120,8 +145,7 @@ body {
 
   .hero-enter-1,
   .hero-enter-2,
-  .hero-enter-3,
-  .hero-enter-4 {
+  .hero-enter-3 {
     animation: none !important;
     opacity: 1;
     transform: none;
@@ -129,5 +153,12 @@ body {
 
   .motion-cutout {
     animation: none !important;
+  }
+
+  .landing-composer-backdrop-enter,
+  .landing-composer-sheet-enter {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
   }
 }

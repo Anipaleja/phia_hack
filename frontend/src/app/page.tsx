@@ -1,6 +1,7 @@
 "use client";
 
-import { FormEvent, MouseEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, MouseEvent, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   SearchItem,
   SESSION_TOKEN_KEY,
@@ -15,6 +16,8 @@ type ChatMessage = {
   role: "assistant" | "user";
   text: string;
   products?: SearchItem[];
+  /** When true (assistant + products), show blurred teaser grid with sign-in CTA instead of plain text. */
+  lockedPreview?: boolean;
 };
 
 type SavedChatSession = {
@@ -24,6 +27,8 @@ type SavedChatSession = {
   basePrompt: string;
   awaitingFollowUp: boolean;
 };
+
+const STYLE_CHAT_FORM_ID = "style-chat-form";
 
 const CHAT_HISTORY_KEY = "closer_chat_history_v1";
 const MAX_SAVED_SESSIONS = 30;
@@ -166,7 +171,63 @@ function FloatingCutout({
   );
 }
 
-function MessageBubble({ message }: { message: ChatMessage }) {
+function LockedRecommendationsPreview({
+  products,
+  onOpenLogin,
+}: {
+  products: SearchItem[];
+  onOpenLogin: () => void;
+}) {
+  const preview = products.slice(0, 6);
+
+  return (
+    <div
+      className="relative overflow-hidden rounded-[18px] border border-muted-border bg-[#f4efe6]"
+      role="status"
+      aria-label="Your outfit recommendations are ready. Sign in to view details."
+    >
+      <div className="grid grid-cols-3 gap-px bg-stone-300/80">
+        {preview.map((item) => (
+          <div key={item.id} className="relative aspect-[4/5] overflow-hidden bg-[#e9e3d8]">
+            <div
+              className="h-full w-full scale-110 bg-cover bg-center blur-md"
+              style={item.imageUrl ? { backgroundImage: `url(${item.imageUrl})` } : undefined}
+              aria-hidden
+            />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-stone-900/25 to-transparent" />
+          </div>
+        ))}
+      </div>
+
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-stone-900/[0.12] p-4 backdrop-blur-[2px]">
+        <div className="pointer-events-auto max-w-[min(100%,20rem)] rounded-2xl border border-stone-200/90 bg-[#fbf8f2]/95 px-6 py-5 text-center shadow-[0_18px_38px_rgba(24,23,21,0.12)]">
+          <p className="font-editorial text-[1.15rem] leading-snug text-stone-900">Your picks are ready</p>
+          <p className="mt-2 text-[0.88rem] leading-[1.55] text-stone-600">
+            Sign in to load live outfit results and reveal pieces tailored to you.
+          </p>
+          <button
+            type="button"
+            onClick={onOpenLogin}
+            className="mt-4 w-full rounded-full border border-stone-900 bg-stone-900 py-2.5 text-[10px] uppercase tracking-[0.14em] text-[#faf7f1] transition hover:bg-stone-800"
+          >
+            Log in
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MessageBubble({
+  message,
+  onOpenLogin,
+}: {
+  message: ChatMessage;
+  onOpenLogin?: () => void;
+}) {
+  const isLockedPreview =
+    message.role === "assistant" && message.lockedPreview && message.products && message.products.length > 0;
+
   return (
     <div
       className={`max-w-3xl rounded-[22px] border px-6 py-5 transition-colors duration-200 ${
@@ -175,42 +236,51 @@ function MessageBubble({ message }: { message: ChatMessage }) {
           : "border-muted-border bg-card text-stone-800"
       }`}
     >
-      <p className="text-[0.97rem] leading-[1.7]">{message.text}</p>
+      {isLockedPreview ? (
+        <LockedRecommendationsPreview
+          products={message.products!}
+          onOpenLogin={onOpenLogin ?? (() => {})}
+        />
+      ) : (
+        <>
+          <p className="text-[0.97rem] leading-[1.7]">{message.text}</p>
 
-      {message.products && message.products.length > 0 && (
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          {message.products.map((item) => (
-            <article
-              key={item.id}
-              className="group overflow-hidden rounded-[18px] border border-muted-border bg-[#faf7f1] transition-colors duration-200 hover:bg-[#f7f2e9]"
-            >
-              <div
-                className="aspect-[4/5] bg-[#e9e3d8] bg-cover bg-center transition-transform duration-300 group-hover:scale-[1.01]"
-                style={item.imageUrl ? { backgroundImage: `url(${item.imageUrl})` } : undefined}
-                aria-label={item.title}
-              />
-              <div className="space-y-2 p-4">
-                <p className="text-[10px] uppercase tracking-[0.14em] text-stone-500">{item.store}</p>
-                <h3 className="font-editorial text-[1.36rem] leading-[1.2] text-stone-900">{item.title}</h3>
-                <p className="text-[0.92rem] leading-[1.55] text-stone-700">
-                  {item.currency} {item.price}
-                </p>
-                <p className="text-[0.86rem] leading-[1.5] text-stone-600">
-                  {item.reason ??
-                    "Works for this direction thanks to its clean silhouette and understated color balance."}
-                </p>
-                <a
-                  href={item.productUrl}
-                  className="inline-block pt-1 text-[10px] uppercase tracking-[0.14em] text-stone-900 transition-opacity duration-200 hover:opacity-70"
-                  target="_blank"
-                  rel="noreferrer"
+          {message.products && message.products.length > 0 && (
+            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+              {message.products.map((item) => (
+                <article
+                  key={item.id}
+                  className="group overflow-hidden rounded-[18px] border border-muted-border bg-[#faf7f1] transition-colors duration-200 hover:bg-[#f7f2e9]"
                 >
-                  View piece
-                </a>
-              </div>
-            </article>
-          ))}
-        </div>
+                  <div
+                    className="aspect-[4/5] bg-[#e9e3d8] bg-cover bg-center transition-transform duration-300 group-hover:scale-[1.01]"
+                    style={item.imageUrl ? { backgroundImage: `url(${item.imageUrl})` } : undefined}
+                    aria-label={item.title}
+                  />
+                  <div className="space-y-2 p-4">
+                    <p className="text-[10px] uppercase tracking-[0.14em] text-stone-500">{item.store}</p>
+                    <h3 className="font-editorial text-[1.36rem] leading-[1.2] text-stone-900">{item.title}</h3>
+                    <p className="text-[0.92rem] leading-[1.55] text-stone-700">
+                      {item.currency} {item.price}
+                    </p>
+                    <p className="text-[0.86rem] leading-[1.5] text-stone-600">
+                      {item.reason ??
+                        "Works for this direction thanks to its clean silhouette and understated color balance."}
+                    </p>
+                    <a
+                      href={item.productUrl}
+                      className="inline-block pt-1 text-[10px] uppercase tracking-[0.14em] text-stone-900 transition-opacity duration-200 hover:opacity-70"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      View piece
+                    </a>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
@@ -286,8 +356,8 @@ export default function Home() {
   const [landingComposerFocused, setLandingComposerFocused] = useState(false);
 
   const hasConversationStarted = messages.some((message) => message.role === "user");
-  /** True after user focuses the field and types at least one character (landing hero only). */
-  const isLandingComposerCentered = landingComposerFocused && input.length > 0;
+  /** True after user focuses the landing field and types (fixed viewport center; avoids transform ancestors). */
+  const isLandingComposerCentered = landingComposerFocused && input.trim().length > 0;
 
   useEffect(() => {
     // Hydrate auth state from sessionStorage after mount (avoids SSR/client mismatch).
@@ -299,6 +369,19 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional one-time sync
     setChatHistory(loadChatHistory());
   }, []);
+
+  useLayoutEffect(() => {
+    if (!isLandingComposerCentered) return;
+    const ta = landingComposerRef.current;
+    if (!ta) return;
+    ta.focus();
+    const len = ta.value.length;
+    try {
+      ta.setSelectionRange(len, len);
+    } catch {
+      // selection not supported for this input type in some environments
+    }
+  }, [isLandingComposerCentered]);
 
   function goHome() {
     if (hasConversationStarted) {
@@ -394,7 +477,9 @@ export default function Home() {
           ...prev,
           {
             role: "assistant",
-            text: "Sign in with your Closer account (Log in, top right) to load live outfit results from the backend.",
+            text: "",
+            lockedPreview: true,
+            products: EXAMPLE_PRODUCTS,
           },
         ]);
         setLoading(false);
@@ -463,44 +548,51 @@ export default function Home() {
       <div
         className={`rounded-full border border-stone-300/80 bg-[#faf7f1] transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] focus-within:shadow-[0_14px_34px_rgba(24,23,21,0.12)] ${
           isLanding
-            ? "p-5 shadow-[0_18px_38px_rgba(24,23,21,0.08)]"
+            ? "px-5 py-4 shadow-[0_18px_38px_rgba(24,23,21,0.08)] sm:px-6 sm:py-4"
             : "p-3.5 shadow-[0_8px_18px_rgba(24,23,21,0.06)]"
         }`}
       >
-        <textarea
-          ref={isLanding ? landingComposerRef : undefined}
-          value={input}
-          onChange={(event) => setInput(event.target.value)}
-          onFocus={() => {
-            if (isLanding) setLandingComposerFocused(true);
-          }}
-          onBlur={() => {
-            if (isLanding) setLandingComposerFocused(false);
-          }}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" && !event.shiftKey) {
-              event.preventDefault();
-              event.currentTarget.form?.requestSubmit();
-            }
-          }}
-          placeholder="I want JFK Jr. style for spring in New York..."
-          className={`w-full resize-none bg-transparent text-[1rem] leading-[1.65] text-stone-900 outline-none placeholder:text-stone-500 ${
-            isLanding
-              ? "min-h-[4.25rem] px-6 py-4"
-              : "min-h-12 px-3 py-2"
-          }`}
-        />
-        <div className={`flex justify-end ${isLanding ? "mt-1 pr-0.5" : "mt-2 pr-1"}`}>
-          <button
-            type="submit"
-            disabled={loading || !input.trim()}
-            onMouseDown={(event) => {
-              if (isLanding) event.preventDefault();
+        <div
+          className={`flex w-full min-w-0 ${isLanding ? "items-center gap-3 sm:gap-4" : "flex-col gap-2"}`}
+        >
+          <textarea
+            ref={isLanding ? landingComposerRef : undefined}
+            form={STYLE_CHAT_FORM_ID}
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
+            onFocus={() => {
+              if (isLanding) setLandingComposerFocused(true);
             }}
-            className="rounded-full border border-stone-900 px-5 py-2 text-[10px] uppercase tracking-[0.14em] text-stone-900 transition-colors duration-200 hover:bg-stone-900 hover:text-[#f7f3ec] disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-transparent disabled:hover:text-stone-900"
-          >
-            Send
-          </button>
+            onBlur={() => {
+              if (isLanding) setLandingComposerFocused(false);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                const formEl = document.getElementById(STYLE_CHAT_FORM_ID);
+                if (formEl instanceof HTMLFormElement) formEl.requestSubmit();
+              }
+            }}
+            placeholder="I want JFK Jr. style for spring in New York..."
+            className={`w-full min-w-0 flex-1 resize-none bg-transparent text-[1rem] leading-[1.65] text-stone-900 outline-none placeholder:text-stone-500 ${
+              isLanding
+                ? "min-h-[4.25rem] py-1.5 pl-0.5 pr-1 sm:py-2"
+                : "min-h-12 px-3 py-2"
+            }`}
+          />
+          <div className={`flex shrink-0 ${isLanding ? "" : "justify-end pr-1 pt-0.5"}`}>
+            <button
+              type="submit"
+              form={STYLE_CHAT_FORM_ID}
+              disabled={loading || !input.trim()}
+              onMouseDown={(event) => {
+                if (isLanding) event.preventDefault();
+              }}
+              className="rounded-full border border-stone-900 px-5 py-2 text-[10px] uppercase tracking-[0.14em] text-stone-900 transition-colors duration-200 hover:bg-stone-900 hover:text-[#f7f3ec] disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-transparent disabled:hover:text-stone-900"
+            >
+              Send
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -670,10 +762,10 @@ export default function Home() {
         </div>
       )}
 
-      <form id="style-chat-form" onSubmit={onSubmit} className="relative z-[2] min-h-0 flex-1 overflow-hidden">
+      <form id={STYLE_CHAT_FORM_ID} onSubmit={onSubmit} className="relative z-[2] min-h-0 flex-1 overflow-hidden">
         <section
-          className={`absolute inset-0 overflow-x-hidden overflow-y-hidden transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-            hasConversationStarted ? "pointer-events-none translate-y-2 opacity-0" : "translate-y-0 opacity-100"
+          className={`absolute inset-0 overflow-x-hidden overflow-y-hidden transition-opacity duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+            hasConversationStarted ? "pointer-events-none opacity-0" : "opacity-100"
           }`}
           aria-hidden={hasConversationStarted}
         >
@@ -729,21 +821,32 @@ export default function Home() {
                 </ul>
               </div>
             )}
-            <div className="hero-enter-4 group relative mt-6 w-full shrink-0 sm:mt-7">
-              <div
-                className="pointer-events-none fixed inset-0 z-30 bg-stone-900/0 transition-colors duration-300 group-focus-within:pointer-events-auto group-focus-within:bg-stone-900/15"
-                aria-hidden
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  landingComposerRef.current?.blur();
-                }}
-              />
-              <div className="relative z-10 mx-auto flex min-h-[6rem] w-full max-w-3xl items-end justify-center sm:min-h-[6.5rem]">
-                <div className="w-full transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-focus-within:fixed group-focus-within:left-1/2 group-focus-within:top-1/2 group-focus-within:z-40 group-focus-within:w-[min(calc(100vw-2rem),48rem)] group-focus-within:max-w-3xl group-focus-within:-translate-x-1/2 group-focus-within:-translate-y-1/2">
-                  {composer(true)}
+            {/* Centered state is portaled to document.body so position is truly viewport-centered (no transform ancestors). */}
+            {typeof document !== "undefined" &&
+              isLandingComposerCentered &&
+              createPortal(
+                <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 sm:p-6">
+                  <div
+                    className="landing-composer-backdrop-enter absolute inset-0 bg-stone-900/15"
+                    aria-hidden
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      landingComposerRef.current?.blur();
+                    }}
+                  />
+                  <div className="landing-composer-sheet-enter relative z-10 w-full max-w-3xl shrink-0">
+                    {composer(true)}
+                  </div>
+                </div>,
+                document.body
+              )}
+            {!isLandingComposerCentered && (
+              <div className="relative mt-6 w-full shrink-0 sm:mt-7">
+                <div className="relative z-10 mx-auto flex min-h-[6rem] w-full max-w-3xl items-end justify-center sm:min-h-[6.5rem]">
+                  <div className="w-full">{composer(true)}</div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </section>
 
@@ -755,7 +858,15 @@ export default function Home() {
           <div className="min-h-0 flex-1 overflow-y-auto pb-44 pr-1 pt-2">
             <div className="mx-auto flex w-full max-w-4xl flex-col gap-7">
               {messages.map((message, index) => (
-                <MessageBubble key={`${message.role}-${index}`} message={message} />
+                <MessageBubble
+                  key={`${message.role}-${index}`}
+                  message={message}
+                  onOpenLogin={() => {
+                    setAuthPanel("login");
+                    setAuthError(null);
+                    setAuthNotice(null);
+                  }}
+                />
               ))}
               {loading && (
                 <div className="max-w-3xl rounded-[22px] border border-muted-border bg-card px-6 py-4 text-[0.9rem] text-stone-600">

@@ -8,7 +8,8 @@ Advanced Node.js + Express backend for AI-powered fashion shopping agent.
 - Node.js 18+
 - npm or yarn
 - Supabase account (free tier)
-- OpenAI API key (fallback for Ollama)
+- Gemini API key (primary AI provider)
+- OpenAI API key (optional fallback)
 - Unsplash API key (free)
 - Pexels API key (free)
 
@@ -41,9 +42,9 @@ npm start
 ### Core Services
 
 **AIService** — Style Generation
-- Generates 5 fashion items using Ollama (local) or OpenAI (fallback)
+- Generates 5 fashion items using Gemini or OpenAI (fallback)
 - Validates JSON parsing and returns structured StyleItem[]
-- Automatic fallback if Ollama unavailable
+- Automatic fallback if Gemini unavailable
 
 **ImageService** — Visual Search
 - Fetches outfit images from Unsplash and Pexels APIs
@@ -176,10 +177,10 @@ SUPABASE_URL=https://xxx.supabase.co
 SUPABASE_ANON_KEY=eyNxxx...
 SUPABASE_SERVICE_ROLE_KEY=eyNxxx...
 
-# AI (OpenAI is fallback, Ollama is optional)
+# AI (Gemini is primary, OpenAI is optional fallback)
+GEMINI_API_KEY=your_gemini_api_key
+GEMINI_MODEL=gemini-1.5-flash
 OPENAI_API_KEY=sk-xxx
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=mistral
 
 # Images (both required)
 UNSPLASH_ACCESS_KEY=xxx
@@ -238,8 +239,8 @@ vercel deploy
 
 ## Troubleshooting
 
-### "Ollama connection unavailable"
-- This is expected if Ollama not running locally
+### "Gemini connection unavailable"
+- Check GEMINI_API_KEY and GEMINI_MODEL in .env
 - Backend will fallback to OpenAI automatically
 - Make sure OPENAI_API_KEY is configured
 

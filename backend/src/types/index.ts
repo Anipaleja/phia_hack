@@ -79,7 +79,7 @@ export interface Outfit {
 // API Request/Response types
 export interface GenerateStylesRequest {
   prompt: string;
-  modelPreference?: "ollama" | "openai";
+  modelPreference?: "gemini" | "openai";
 }
 
 export interface GenerateStylesResponse {
@@ -120,7 +120,7 @@ export interface SearchHistory {
 // AI Provider Response
 export interface AIProviderResponse {
   styles: StyleItem[];
-  provider: "openai" | "ollama";
+  provider: "openai" | "gemini";
   timestamp: string;
 }
 

@@ -5,7 +5,7 @@ import logger from "./utils/logger";
 import { handleError } from "./utils/errorHandler";
 import { apiLimiter } from "./middleware/rateLimiter";
 import { verifySupabaseConnection } from "./config/supabase";
-import { verifyOllamaConnection } from "./config/aiConfig";
+import { verifyGeminiConnection } from "./config/aiConfig";
 import PriceService from "./services/priceService";
 
 // Load environment variables
@@ -56,14 +56,14 @@ app.use("/api/", apiLimiter);
 app.get("/health", async (req: Request, res: Response) => {
   try {
     const supabaseOk = await verifySupabaseConnection();
-    const ollamaOk = await verifyOllamaConnection();
+    const geminiOk = await verifyGeminiConnection();
 
     const status = {
       status: supabaseOk ? "healthy" : "degraded",
       timestamp: new Date().toISOString(),
       services: {
         supabase: supabaseOk ? "ok" : "unavailable",
-        ollama: ollamaOk ? "ok" : "unavailable",
+        gemini: geminiOk ? "ok" : "unavailable",
         openai: process.env.OPENAI_API_KEY ? "configured" : "not_configured",
         unsplash: process.env.UNSPLASH_ACCESS_KEY ? "configured" : "not_configured",
         pexels: process.env.PEXELS_API_KEY ? "configured" : "not_configured",
@@ -71,7 +71,7 @@ app.get("/health", async (req: Request, res: Response) => {
     };
 
     const statusCode =
-      supabaseOk && (ollamaOk || process.env.OPENAI_API_KEY)
+      supabaseOk && (geminiOk || process.env.OPENAI_API_KEY)
         ? 200
         : 503;
     return res.status(statusCode).json(status);
@@ -162,11 +162,11 @@ const startServer = async () => {
       process.exit(1);
     }
 
-    // Ollama and OpenAI are not critical (fallback available)
-    const ollamaOk = await verifyOllamaConnection();
-    if (!ollamaOk && !process.env.OPENAI_API_KEY) {
+    // Gemini and OpenAI are not critical (fallback available)
+    const geminiOk = await verifyGeminiConnection();
+    if (!geminiOk && !process.env.OPENAI_API_KEY) {
       logger.error(
-        "Both Ollama and OpenAI are unavailable - style generation will fail"
+        "Both Gemini and OpenAI are unavailable - style generation will fail"
       );
     }
 

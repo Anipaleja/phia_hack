@@ -1,21 +1,25 @@
 import { OpenAI } from "openai";
 import logger from "../utils/logger";
 
-// Initialize OpenAI client - optional if API key not provided
 let openaiClient: OpenAI | null = null;
-if (process.env.OPENAI_API_KEY) {
-  openaiClient = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-  });
-} else {
-  logger.warn("OpenAI API key not configured. Will fallback to Ollama for AI features.");
-}
 
-export { openaiClient };
+export const getOpenAIClient = (): OpenAI | null => {
+  if (!process.env.OPENAI_API_KEY) {
+    return null;
+  }
 
-export const ollamaConfig = {
-  baseUrl: process.env.OLLAMA_BASE_URL || "http://localhost:11434",
-  model: process.env.OLLAMA_MODEL || "mistral",
+  if (!openaiClient) {
+    openaiClient = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+  }
+
+  return openaiClient;
+};
+
+export const geminiConfig = {
+  apiBaseUrl: "https://generativelanguage.googleapis.com/v1beta",
+  model: process.env.GEMINI_MODEL || "gemini-1.5-flash",
   timeout: 30000,
 };
 
@@ -53,20 +57,29 @@ Example:
 Now generate the outfit:`;
 };
 
-export const verifyOllamaConnection = async (): Promise<boolean> => {
+export const verifyGeminiConnection = async (): Promise<boolean> => {
+  if (!process.env.GEMINI_API_KEY) {
+    logger.warn("Gemini API key not configured. Will fallback to OpenAI for AI features.");
+    return false;
+  }
+
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
-    const response = await fetch(`${ollamaConfig.baseUrl}/api/tags`, {
+    const response = await fetch(
+      `${geminiConfig.apiBaseUrl}/models/${geminiConfig.model}?key=${process.env.GEMINI_API_KEY}`,
+      {
       signal: controller.signal,
-    });
+      }
+    );
     clearTimeout(timeoutId);
+
     if (response.ok) {
-      logger.info("Ollama connection verified");
+      logger.info("Gemini connection verified");
       return true;
     }
   } catch (error) {
-    logger.warn("Ollama connection unavailable - will fallback to OpenAI", {
+    logger.warn("Gemini connection unavailable - will fallback to OpenAI", {
       error: error instanceof Error ? error.message : String(error),
     });
   }

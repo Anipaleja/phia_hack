@@ -1,54 +1,66 @@
 import axios from "axios";
-import { openaiClient, ollamaConfig, getStyleGenerationPrompt } from "../config/aiConfig";
+import { getOpenAIClient, geminiConfig, getStyleGenerationPrompt } from "../config/aiConfig";
 import { StyleItem, AIProviderResponse } from "../types";
 import { AppError } from "../utils/errorHandler";
 import logger from "../utils/logger";
 
 /**
  * AI Service: Generates fashion style recommendations
- * Uses Ollama for local inference, falls back to OpenAI for reliability
+ * Uses Gemini as primary provider, falls back to OpenAI for reliability
  */
 
 export class AIService {
   /**
-   * Generate styles using Ollama (local, free)
+   * Generate styles using Gemini
    * Returns parsed StyleItem array
    */
-  private static async generateWithOllama(
+  private static async generateWithGemini(
     prompt: string
   ): Promise<StyleItem[]> {
     try {
+      if (!process.env.GEMINI_API_KEY) {
+        throw new Error("Gemini API key not configured");
+      }
+
       const response = await axios.post(
-        `${ollamaConfig.baseUrl}/api/generate`,
+        `${geminiConfig.apiBaseUrl}/models/${geminiConfig.model}:generateContent?key=${process.env.GEMINI_API_KEY}`,
         {
-          model: ollamaConfig.model,
-          prompt: getStyleGenerationPrompt(prompt),
-          stream: false,
-          temperature: 0.7,
+          contents: [
+            {
+              parts: [{ text: getStyleGenerationPrompt(prompt) }],
+            },
+          ],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 700,
+          },
         },
-        { timeout: ollamaConfig.timeout }
+        { timeout: geminiConfig.timeout }
       );
 
-      const responseText = response.data.response || "";
+      const responseText =
+        response.data?.candidates?.[0]?.content?.parts
+          ?.map((part: { text?: string }) => part.text || "")
+          .join(" ") || "";
       const jsonMatch = responseText.match(/\[[\s\S]*\]/);
 
       if (!jsonMatch) {
-        throw new Error("No valid JSON found in Ollama response");
+        throw new Error("No valid JSON found in Gemini response");
       }
 
       const parsed = JSON.parse(jsonMatch[0]);
       if (!Array.isArray(parsed)) {
-        throw new Error("Invalid response format from Ollama");
+        throw new Error("Invalid response format from Gemini");
       }
 
-      logger.info("Successfully generated styles with Ollama", {
+      logger.info("Successfully generated styles with Gemini", {
         itemCount: parsed.length,
       });
       return parsed;
     } catch (error) {
       const errorMsg =
         error instanceof Error ? error.message : String(error);
-      logger.warn("Ollama generation failed, falling back to OpenAI", {
+      logger.warn("Gemini generation failed, falling back to OpenAI", {
         error: errorMsg,
       });
       throw error;
@@ -63,6 +75,7 @@ export class AIService {
     prompt: string
   ): Promise<StyleItem[]> {
     try {
+      const openaiClient = getOpenAIClient();
       if (!openaiClient || !process.env.OPENAI_API_KEY) {
         throw new AppError(
           "OpenAI API key not configured",
@@ -120,12 +133,12 @@ export class AIService {
 
   /**
    * Generate styles with automatic fallback
-   * First tries Ollama (local, fast, free)
-   * Falls back to OpenAI if Ollama unavailable
+   * First tries Gemini
+   * Falls back to OpenAI if Gemini unavailable
    */
   static async generateStyles(
     prompt: string,
-    modelPreference?: "ollama" | "openai"
+    modelPreference?: "gemini" | "openai"
   ): Promise<AIProviderResponse> {
     // Validate prompt
     if (!prompt || prompt.trim().length === 0) {
@@ -145,20 +158,20 @@ export class AIService {
     }
 
     let styles: StyleItem[];
-    let provider: "ollama" | "openai" = "openai";
+    let provider: "gemini" | "openai" = "openai";
 
     try {
-      // If user prefers Ollama, try it first
+      // If user prefers Gemini, try it first
       if (modelPreference !== "openai") {
-        styles = await AIService.generateWithOllama(prompt);
-        provider = "ollama";
+        styles = await AIService.generateWithGemini(prompt);
+        provider = "gemini";
       } else {
         // Otherwise go straight to OpenAI
         styles = await AIService.generateWithOpenAI(prompt);
         provider = "openai";
       }
     } catch (error) {
-      // Fallback to OpenAI if Ollama fails
+      // Fallback to OpenAI if Gemini fails
       if (modelPreference !== "openai") {
         logger.info("Attempting fallback to OpenAI");
         styles = await AIService.generateWithOpenAI(prompt);

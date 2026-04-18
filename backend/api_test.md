@@ -256,7 +256,7 @@ curl -X POST http://localhost:3001/api/ai/generate-styles \
   -H "Content-Type: application/json" \
   -d '{
     "prompt": "Minimalist Japanese fashion",
-    "modelPreference": "ollama"
+    "modelPreference": "gemini"
   }'
 ```
 
@@ -367,9 +367,13 @@ SELECT * FROM user_profiles;
 - Check URL spelling and HTTP method (GET vs POST)
 - Verify server is running (`npm run dev`)
 
+**"Gemini not configured" error**
+- Set GEMINI_API_KEY in .env file
+- Optionally set GEMINI_MODEL (default is gemini-1.5-flash)
+
 **"OpenAI not configured" error**
 - Set OPENAI_API_KEY in .env file
-- Or use local Ollama instead
+- Or rely on Gemini as primary provider
 
 **"Rate limit exceeded"**
 - Wait 24 hours or use different email

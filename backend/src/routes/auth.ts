@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { supabaseClient } from "../config/supabase";
+import { supabaseAdmin, supabaseClient } from "../config/supabase";
 import { AppError, handleError } from "../utils/errorHandler";
 import { authLimiter } from "../middleware/rateLimiter";
 import logger from "../utils/logger";
@@ -50,6 +50,76 @@ router.post("/signup", authLimiter, async (req: Request, res: Response) => {
     if (error) {
       logger.warn("Signup error", { email, error: error.message });
       if (error.message.toLowerCase().includes("rate limit")) {
+        // Graceful UX fallback: if user already exists, allow immediate login.
+        const { data: loginData, error: loginError } =
+          await supabaseClient.auth.signInWithPassword({
+            email,
+            password,
+          });
+
+        if (!loginError && loginData.session) {
+          logger.info("Signup rate-limited; existing user logged in", {
+            userId: loginData.user.id,
+            email,
+          });
+
+          return res.status(200).json({
+            message:
+              "Signup is temporarily rate-limited. Logged in with existing account.",
+            user: {
+              id: loginData.user.id,
+              email: loginData.user.email,
+            },
+            token: loginData.session.access_token,
+            refreshToken: loginData.session.refresh_token,
+          });
+        }
+
+        // Hackathon/dev fallback: create user via admin API when Supabase public
+        // signup endpoint is throttled. Keep this disabled in production.
+        if (process.env.NODE_ENV === "development") {
+          const { data: adminCreateData, error: adminCreateError } =
+            await supabaseAdmin.auth.admin.createUser({
+              email,
+              password,
+              email_confirm: true,
+              user_metadata: {
+                full_name: fullName || "",
+              },
+            });
+
+          if (!adminCreateError && adminCreateData.user) {
+            const { data: adminLoginData, error: adminLoginError } =
+              await supabaseClient.auth.signInWithPassword({
+                email,
+                password,
+              });
+
+            if (!adminLoginError && adminLoginData.session) {
+              logger.info("Signup rate-limited; created user via admin fallback", {
+                userId: adminLoginData.user.id,
+                email,
+              });
+
+              return res.status(201).json({
+                message:
+                  "Signup completed via development fallback and user is logged in.",
+                user: {
+                  id: adminLoginData.user.id,
+                  email: adminLoginData.user.email,
+                },
+                token: adminLoginData.session.access_token,
+                refreshToken: adminLoginData.session.refresh_token,
+              });
+            }
+          }
+
+          logger.warn("Dev admin signup fallback failed", {
+            email,
+            error: adminCreateError?.message,
+          });
+        }
+
         throw new AppError(
           "Signup temporarily rate-limited. Please wait a minute and try again, or log in if you already have an account.",
           "SIGNUP_RATE_LIMITED",

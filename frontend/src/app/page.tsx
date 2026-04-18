@@ -176,7 +176,6 @@ export default function Home() {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [basePrompt, setBasePrompt] = useState("");
-  const [awaitingFollowUp, setAwaitingFollowUp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
@@ -234,8 +233,7 @@ export default function Home() {
     setToken(null);
   }
 
-  async function runSearchWithFollowUp(followUpAnswer: string) {
-    const combinedPrompt = `${basePrompt}\nFollow-up: ${followUpAnswer}`;
+  async function runSearchWithFollowUp(combinedPrompt: string) {
 
     setLoading(true);
     try {
@@ -293,22 +291,15 @@ export default function Home() {
 
     setMessages((prev) => [...prev, { role: "user", text: trimmed }]);
     setInput("");
+    const composedPrompt = basePrompt
+      ? [basePrompt, trimmed].filter(Boolean).join("\nFollow-up: ")
+      : trimmed;
 
-    if (!awaitingFollowUp) {
+    if (!basePrompt) {
       setBasePrompt(trimmed);
-      setAwaitingFollowUp(true);
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          text: "Do you want this more casual or sharper? You can include constraints like budget directly here.",
-        },
-      ]);
-      return;
     }
 
-    setAwaitingFollowUp(false);
-    await runSearchWithFollowUp(trimmed);
+    await runSearchWithFollowUp(composedPrompt);
   }
 
   const composer = (isLanding: boolean) => (

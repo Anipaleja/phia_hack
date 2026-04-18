@@ -68,16 +68,21 @@ export const apiLimiter = (req: any, res: any, next: any) => {
  * SECURITY: Prevents brute force password attacks
  */
 export const authLimiter = (req: any, res: any, next: any) => {
+  const authLimiterDisabled = process.env.AUTH_RATE_LIMIT_DISABLED === "true";
+  if (authLimiterDisabled) {
+    return next();
+  }
+
   const key = `auth:${req.ip}`;
   const count = store.increment(key);
-  const limit = 5;
+  const limit = parseInt(process.env.RATE_LIMIT_AUTH_MAX_REQUESTS || "20");
 
   if (count > limit) {
     logger.warn("Auth rate limit exceeded", { ip: req.ip, count });
     return res.status(429).json({
       error: {
         code: "AUTH_RATE_LIMIT",
-        message: "Too many login attempts. Please try again later.",
+        message: "Too many auth attempts. Please try again later.",
         retryAfter: 900, // 15 minutes
       },
     });

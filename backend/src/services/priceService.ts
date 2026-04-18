@@ -19,6 +19,18 @@ type LaunchStrategy = {
 };
 
 export class PriceService {
+  private static getPriceScrapeTimeoutMs(): number {
+    const configuredTimeout = parseInt(
+      process.env.PRICE_SCRAPE_MAX_WAIT_MS ||
+        process.env.GOOGLE_SHOPPING_SCRAPE_TIMEOUT ||
+        "25000"
+    );
+
+    return Number.isFinite(configuredTimeout)
+      ? Math.max(configuredTimeout, 12000)
+      : 25000;
+  }
+
   private static buildMockPrices(itemName: string, searchQuery: string): PricePoint[] {
     const seed = `${itemName}:${searchQuery}`
       .split("")
@@ -148,7 +160,9 @@ export class PriceService {
   private static async scrapeGoogleShopping(
     query: string
   ): Promise<PricePoint[]> {
-    const timeout = parseInt(process.env.GOOGLE_SHOPPING_SCRAPE_TIMEOUT || "30000");
+    const timeout = parseInt(
+      process.env.GOOGLE_SHOPPING_SCRAPE_TIMEOUT || "30000"
+    );
     const browserInstance = await PriceService.getBrowser();
 
     let page = null;
@@ -165,9 +179,13 @@ export class PriceService {
       )}`;
       
       await page.goto(searchUrl, {
-        waitUntil: "networkidle2",
+        waitUntil: "domcontentloaded",
         timeout,
       });
+
+      await page.waitForSelector("[data-item-id]", {
+        timeout: Math.min(timeout, 10000),
+      }).catch(() => undefined);
 
       // Extract product data
       const products = await page.evaluate(() => {
@@ -255,23 +273,51 @@ export class PriceService {
 
     try {
       logger.debug("Scraping prices", { itemName, style, color });
-      const scrapeTimeoutMs = parseInt(
-        process.env.PRICE_SCRAPE_MAX_WAIT_MS || "6000"
-      );
+      const scrapeTimeoutMs = PriceService.getPriceScrapeTimeoutMs();
 
-      const pricePoints = await Promise.race([
-        PriceService.scrapeGoogleShopping(searchQuery),
-        new Promise<PricePoint[]>((resolve) =>
-          setTimeout(() => {
-            logger.warn("Price scrape timed out, using mock fallback", {
+      const pricePoints = await new Promise<PricePoint[]>((resolve) => {
+        let settled = false;
+
+        const timeoutId = setTimeout(async () => {
+          if (settled) {
+            return;
+          }
+
+          settled = true;
+          logger.warn("Price scrape timed out, using mock fallback", {
+            itemName,
+            searchQuery,
+            scrapeTimeoutMs,
+          });
+
+          resolve([]);
+        }, scrapeTimeoutMs);
+
+        PriceService.scrapeGoogleShopping(searchQuery)
+          .then((results) => {
+            if (settled) {
+              return;
+            }
+
+            settled = true;
+            clearTimeout(timeoutId);
+            resolve(results);
+          })
+          .catch((error) => {
+            if (settled) {
+              return;
+            }
+
+            settled = true;
+            clearTimeout(timeoutId);
+            logger.warn("Google Shopping scrape failed, using mock fallback", {
               itemName,
               searchQuery,
-              scrapeTimeoutMs,
+              error: error instanceof Error ? error.message : String(error),
             });
             resolve([]);
-          }, scrapeTimeoutMs)
-        ),
-      ]);
+          });
+      });
 
       const finalPrices =
         pricePoints.length > 0

@@ -66,7 +66,8 @@ type BackendPricePoint = {
 };
 
 type GenerateOutfitResponse = {
-  outfit: BackendOutfitItem[];
+  variants: BackendOutfitItem[];
+  outfit?: BackendOutfitItem[];
   summary: {
     totalItems: number;
     averagePrice: unknown;
@@ -183,7 +184,7 @@ function titleCase(s: string) {
 export function mapOutfitToSearchItems(outfit: BackendOutfitItem[]): SearchItem[] {
   return outfit.map((it, index) => {
     const price = pickDisplayPrice(it);
-    const imageUrl = it.images?.[0]?.url ?? price?.imageUrl ?? "";
+    const imageUrl = price?.imageUrl ?? it.images?.[0]?.url ?? "";
     return {
       id: `${it.item}-${index}`,
       title: titleCase(it.item || "Item"),
@@ -242,7 +243,8 @@ export async function searchOutfit(
     throw new Error(message);
   }
 
-  const outfit = (data as GenerateOutfitResponse).outfit ?? [];
+  const outfitResponse = data as GenerateOutfitResponse;
+  const outfit = outfitResponse.variants ?? outfitResponse.outfit ?? [];
   const items = mapOutfitToSearchItems(outfit);
 
   return {

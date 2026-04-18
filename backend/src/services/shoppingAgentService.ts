@@ -75,22 +75,7 @@ export class ShoppingAgentService {
         );
       }
 
-      // Step 2: Fetch images for all items in parallel
-      const imageResults = await ImageService.getImagesForItems(
-        styleItems.map((s) => ({
-          item: s.item,
-          style: s.style,
-          color: s.color,
-        }))
-      );
-
-      logger.info("Images fetched", {
-        itemCount: imageResults.length,
-        itemsWithImages: imageResults.filter((r) => r.images.length > 0)
-          .length,
-      });
-
-      // Step 3: Fetch prices for all items in parallel
+      // Step 2: Fetch prices for all items in parallel
       const priceResults = await PriceService.getPricesForItems(
         styleItems.map((s) => ({
           item: s.item,
@@ -106,9 +91,8 @@ export class ShoppingAgentService {
         ).length,
       });
 
-      // Step 4: Combine into outfit items with 3-tier pricing
+      // Step 3: Combine into outfit items with 3-tier pricing and listing images
       const outfitItems: OutfitItem[] = styleItems.map((style, index) => {
-        const images = imageResults[index]?.images || [];
         const priceData = priceResults[index];
         const pricePoints = priceData?.pricePoints || [];
 
@@ -136,12 +120,35 @@ export class ShoppingAgentService {
           );
         }
 
+        const primaryPrice =
+          budgetTier === "cheap"
+            ? cheapPrice
+            : budgetTier === "mid"
+            ? midPrice
+            : budgetTier === "expensive"
+            ? expensivePrice
+            : midPrice || cheapPrice || expensivePrice;
+
+        const listingImageUrl =
+          primaryPrice?.imageUrl ||
+          priceData?.cheapest?.imageUrl ||
+          pricePoints.find((pricePoint) => pricePoint.imageUrl)?.imageUrl ||
+          null;
+
         return {
           item: style.item,
           style: style.style,
           color: style.color,
           material: style.material,
-          images,
+          images: listingImageUrl
+            ? [
+                {
+                  url: listingImageUrl,
+                  source: "listing",
+                  alt: `${style.color} ${style.style} ${style.item}`.trim(),
+                },
+              ]
+            : [],
           prices: {
             cheap: cheapPrice,
             mid: midPrice,
@@ -149,6 +156,28 @@ export class ShoppingAgentService {
           },
         };
       });
+
+      const missingImageEntries = outfitItems
+        .map((outfitItem, index) => ({ outfitItem, index }))
+        .filter(({ outfitItem }) => outfitItem.images.length === 0);
+
+      if (missingImageEntries.length > 0) {
+        const fallbackImages = await ImageService.getImagesForItems(
+          missingImageEntries.map(({ outfitItem }) => ({
+            item: outfitItem.item,
+            style: outfitItem.style,
+            color: outfitItem.color,
+          }))
+        );
+
+        fallbackImages.forEach((fallback, fallbackIndex) => {
+          const targetIndex = missingImageEntries[fallbackIndex]?.index;
+
+          if (typeof targetIndex === "number") {
+            outfitItems[targetIndex].images = fallback.images;
+          }
+        });
+      }
 
       logger.info("Outfit generation complete", {
         itemCount: outfitItems.length,

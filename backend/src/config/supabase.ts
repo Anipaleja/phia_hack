@@ -1,5 +1,8 @@
+import dotenv from "dotenv";
 import { createClient } from "@supabase/supabase-js";
 import logger from "../utils/logger";
+
+dotenv.config();
 
 // In development, allow running without Supabase credentials
 const supabaseUrl = process.env.SUPABASE_URL || "https://dummy.supabase.co";

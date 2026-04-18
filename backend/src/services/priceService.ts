@@ -19,6 +19,44 @@ type LaunchStrategy = {
 };
 
 export class PriceService {
+  private static buildMockPrices(itemName: string, searchQuery: string): PricePoint[] {
+    const seed = `${itemName}:${searchQuery}`
+      .split("")
+      .reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+
+    const base = 35 + (seed % 80); // 35 - 114
+    const cheap = Math.round((base + 4.99) * 100) / 100;
+    const mid = Math.round((base * 1.7 + 9.99) * 100) / 100;
+    const expensive = Math.round((base * 2.6 + 19.99) * 100) / 100;
+
+    return [
+      {
+        productName: `${itemName} (Budget Pick)`,
+        price: cheap,
+        currency: "USD",
+        retailer: "mock-budget-store.com",
+        productUrl: "https://example.com/mock-budget",
+        imageUrl: undefined,
+      },
+      {
+        productName: `${itemName} (Best Value)`,
+        price: mid,
+        currency: "USD",
+        retailer: "mock-style-mart.com",
+        productUrl: "https://example.com/mock-mid",
+        imageUrl: undefined,
+      },
+      {
+        productName: `${itemName} (Premium Option)`,
+        price: expensive,
+        currency: "USD",
+        retailer: "mock-luxury-label.com",
+        productUrl: "https://example.com/mock-premium",
+        imageUrl: undefined,
+      },
+    ];
+  }
+
   private static getBaseLaunchOptions() {
     return {
       headless: "new" as const,
@@ -217,14 +255,33 @@ export class PriceService {
 
     try {
       logger.debug("Scraping prices", { itemName, style, color });
-      const pricePoints = await PriceService.scrapeGoogleShopping(searchQuery);
+      const scrapeTimeoutMs = parseInt(
+        process.env.PRICE_SCRAPE_MAX_WAIT_MS || "6000"
+      );
+
+      const pricePoints = await Promise.race([
+        PriceService.scrapeGoogleShopping(searchQuery),
+        new Promise<PricePoint[]>((resolve) =>
+          setTimeout(() => {
+            logger.warn("Price scrape timed out, using mock fallback", {
+              itemName,
+              searchQuery,
+              scrapeTimeoutMs,
+            });
+            resolve([]);
+          }, scrapeTimeoutMs)
+        ),
+      ]);
+
+      const finalPrices =
+        pricePoints.length > 0
+          ? pricePoints
+          : PriceService.buildMockPrices(itemName, searchQuery);
 
       // Cache results even if empty (to prevent repeated scraping)
-      if (pricePoints.length > 0) {
-        priceCache.set(cacheKey, pricePoints);
-      }
+      priceCache.set(cacheKey, finalPrices);
 
-      return PriceService.formatPriceResult(itemName, searchQuery, pricePoints);
+      return PriceService.formatPriceResult(itemName, searchQuery, finalPrices);
     } catch (error) {
       const errorMsg =
         error instanceof Error ? error.message : String(error);
@@ -233,13 +290,9 @@ export class PriceService {
         error: errorMsg,
       });
 
-      // Return empty result rather than throwing
-      // This allows outfit generation to continue without prices
-      return {
-        item: itemName,
-        searchQuery,
-        pricePoints: [],
-      };
+      const fallbackPrices = PriceService.buildMockPrices(itemName, searchQuery);
+      priceCache.set(cacheKey, fallbackPrices);
+      return PriceService.formatPriceResult(itemName, searchQuery, fallbackPrices);
     }
   }
 

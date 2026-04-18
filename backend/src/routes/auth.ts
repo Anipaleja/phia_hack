@@ -49,6 +49,13 @@ router.post("/signup", authLimiter, async (req: Request, res: Response) => {
 
     if (error) {
       logger.warn("Signup error", { email, error: error.message });
+      if (error.message.toLowerCase().includes("rate limit")) {
+        throw new AppError(
+          "Signup temporarily rate-limited. Please wait a minute and try again, or log in if you already have an account.",
+          "SIGNUP_RATE_LIMITED",
+          429
+        );
+      }
       throw new AppError(
         error.message || "Signup failed",
         "SIGNUP_ERROR",

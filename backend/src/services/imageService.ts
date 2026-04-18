@@ -30,6 +30,21 @@ interface PexelsPhoto {
 }
 
 export class ImageService {
+  private static buildPlaceholderImage(
+    itemName: string,
+    style: string,
+    color: string
+  ): Image {
+    const label = encodeURIComponent(`${color} ${style} ${itemName}`.trim());
+    return {
+      url: `https://placehold.co/800x1000/F5F5F5/222222?text=${label}`,
+      source: "placeholder",
+      alt: `${color} ${style} ${itemName}`.trim(),
+      width: 800,
+      height: 1000,
+    };
+  }
+
   /**
    * Fetch images from Unsplash
    * SECURITY: API key is server-side only
@@ -180,7 +195,11 @@ export class ImageService {
 
       if (images.length === 0) {
         logger.warn("No images found", { searchQuery });
-        // Return empty result but don't throw - allow outfit to continue
+        return {
+          itemName,
+          images: [ImageService.buildPlaceholderImage(itemName, style, color)],
+          searchQuery,
+        };
       }
 
       return {
@@ -200,7 +219,7 @@ export class ImageService {
       // This allows the outfit generation to continue with just descriptions
       return {
         itemName,
-        images: [],
+        images: [ImageService.buildPlaceholderImage(itemName, style, color)],
         searchQuery: `${color} ${itemName} ${style}`,
       };
     }

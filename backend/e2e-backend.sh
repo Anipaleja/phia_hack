@@ -13,11 +13,23 @@ curl -s http://localhost:3001/health | head -c 300; echo
 EMAIL="e2e$(date +%s)@example.com"
 PASSWORD="StrongPass123"
 
+if [ -n "${E2E_EMAIL:-}" ]; then
+  EMAIL="$E2E_EMAIL"
+fi
+
+if [ -n "${E2E_PASSWORD:-}" ]; then
+  PASSWORD="$E2E_PASSWORD"
+fi
+
 echo '--- Signup ---'
 SIGNUP=$(curl -s -X POST http://localhost:3001/api/auth/signup \
   -H "Content-Type: application/json" \
   -d "{\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\"}")
 echo "$SIGNUP" | head -c 300; echo
+
+if echo "$SIGNUP" | grep -qi "rate limit"; then
+  echo 'Signup rate limited by Supabase; proceeding to login with provided credentials.'
+fi
 
 echo '--- Login ---'
 LOGIN=$(curl -s -X POST http://localhost:3001/api/auth/login \
@@ -25,9 +37,10 @@ LOGIN=$(curl -s -X POST http://localhost:3001/api/auth/login \
   -d "{\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\"}")
 echo "$LOGIN" | head -c 300; echo
 
-TOKEN=$(node -e 'const x=JSON.parse(process.argv[1]); console.log(x.session?.access_token||"")' "$LOGIN")
+TOKEN=$(node -e 'const x=JSON.parse(process.argv[1]); console.log(x.token||x.session?.access_token||"")' "$LOGIN")
 if [ -z "$TOKEN" ]; then
   echo 'FAILED: no token from login'
+  echo 'Tip: export E2E_EMAIL and E2E_PASSWORD for an existing account if signup is rate-limited.'
   tail -n 80 /tmp/phia_e2e.log
   exit 1
 fi

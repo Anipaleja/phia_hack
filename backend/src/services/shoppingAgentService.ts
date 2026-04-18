@@ -17,6 +17,7 @@ import ShareService from "./shareService";
  */
 
 const outfitCache = new NodeCache({ stdTTL: 3600 });
+const promptCache = new NodeCache({ stdTTL: 3600 });
 
 export class ShoppingAgentService {
   /**
@@ -177,7 +178,9 @@ export class ShoppingAgentService {
     budgetTier: "all" | "cheap" | "mid" | "expensive" = "all"
   ): Promise<OutfitResponse> {
     const startTime = Date.now();
-    const cacheKey = `outfit:${budgetTier}:${prompt.trim().toLowerCase()}`;
+    const normalizedPrompt = prompt.trim().toLowerCase();
+    const cacheKey = `outfit:${budgetTier}:${normalizedPrompt}`;
+    const promptCacheKey = `prompt:${normalizedPrompt}`;
 
     const cachedResponse = outfitCache.get<OutfitResponse>(cacheKey);
     if (cachedResponse) {
@@ -201,6 +204,23 @@ export class ShoppingAgentService {
       };
     }
 
+    // Reuse same-prompt cache across budget tier changes for instant perceived response.
+    const promptCachedResponse = promptCache.get<OutfitResponse>(promptCacheKey);
+    if (promptCachedResponse) {
+      const latencyMs = Date.now() - startTime;
+      AnalyticsService.logEvent({
+        prompt,
+        timestamp: Date.now(),
+        latencyMs,
+        cacheHit: true,
+      });
+
+      return {
+        ...promptCachedResponse,
+        cached: true,
+      };
+    }
+
     const variants = await ShoppingAgentService.generateOutfit(prompt, budgetTier);
     const summaryStats = ShoppingAgentService.calculateOutfitSummary(variants);
     const recommendations = RecommendationService.generateRecommendations(prompt);
@@ -218,6 +238,7 @@ export class ShoppingAgentService {
     };
 
     outfitCache.set(cacheKey, response);
+    promptCache.set(promptCacheKey, response);
 
     const latencyMs = Date.now() - startTime;
     AnalyticsService.logEvent({

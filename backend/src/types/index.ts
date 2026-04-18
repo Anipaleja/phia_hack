@@ -66,6 +66,8 @@ export interface OutfitItem {
   };
 }
 
+export type OutfitVariant = OutfitItem;
+
 export interface Outfit {
   id: string;
   user_id: string;
@@ -95,18 +97,19 @@ export interface GenerateOutfitRequest {
 }
 
 export interface GenerateOutfitResponse {
-  outfit: OutfitItem[];
-  summary: {
-    totalItems: number;
-    averagePrice: {
-      cheap: number;
-      mid: number;
-      expensive: number;
-    };
-    prompt: string;
+  prompt: string;
+  summary: string;
+  variants: OutfitVariant[];
+  recommendations: {
+    label: string;
+    items: string[];
   };
-  created_at: string;
+  shareId?: string;
+  cached: boolean;
+  created_at?: string;
 }
+
+export type OutfitResponse = GenerateOutfitResponse;
 
 // Search history
 export interface SearchHistory {
@@ -123,6 +126,27 @@ export interface AIProviderResponse {
   provider: "openai" | "gemini";
   timestamp: string;
 }
+
+export type AnalyticsEvent = {
+  prompt: string;
+  timestamp: number;
+  latencyMs: number;
+  cacheHit: boolean;
+};
+
+export type AnalyticsSummary = {
+  topPrompts: string[];
+  topVibes: string[];
+  cacheHitRate: number;
+  avgLatencyMs: number;
+  totalEvents: number;
+};
+
+export type SharedOutfit = {
+  id: string;
+  outfit: OutfitResponse;
+  createdAt: number;
+};
 
 // Error types
 export interface ApiError {

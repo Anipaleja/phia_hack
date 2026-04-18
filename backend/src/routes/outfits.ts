@@ -5,10 +5,13 @@ import { handleError } from "../utils/errorHandler";
 import logger from "../utils/logger";
 import ShoppingAgentService from "../services/shoppingAgentService";
 import AIService from "../services/aiService";
+import AnalyticsService from "../services/analyticsService";
+import ShareService from "../services/shareService";
 import { supabaseClient } from "../config/supabase";
 import {
   GenerateStylesRequest,
   GenerateOutfitRequest,
+  OutfitResponse,
   GenerateStylesResponse,
   GenerateOutfitResponse,
 } from "../types";
@@ -89,14 +92,11 @@ router.post(
         });
       }
 
-      // Generate outfit
-      const outfit = await ShoppingAgentService.generateOutfit(
+      // Generate outfit with recommendations and cache metadata
+      const outfitResponse = await ShoppingAgentService.buildOutfit(
         prompt,
         budgetTier || "all"
       );
-
-      // Calculate summary statistics
-      const summary = ShoppingAgentService.calculateOutfitSummary(outfit);
 
       // Save search to database if user wants history
       if (includeHistory && userId) {
@@ -104,7 +104,7 @@ router.post(
           await supabaseClient.from("searches").insert({
             user_id: userId,
             prompt,
-            ai_response: JSON.stringify(outfit),
+            ai_response: JSON.stringify(outfitResponse),
             created_at: new Date().toISOString(),
           });
           logger.info("Search saved to history", { userId });
@@ -117,22 +117,102 @@ router.post(
         }
       }
 
-      const result: GenerateOutfitResponse = {
-        outfit,
-        summary: {
-          totalItems: summary.totalItems,
-          averagePrice: summary.averagePrice,
-          prompt,
-        },
-        created_at: new Date().toISOString(),
-      };
+      const result: GenerateOutfitResponse = outfitResponse;
 
       logger.info("Outfit search completed successfully", {
         userId,
-        itemCount: outfit.length,
+        itemCount: outfitResponse.variants.length,
+        cached: outfitResponse.cached,
       });
 
       return res.status(200).json(result);
+    } catch (error) {
+      return handleError(error as Error, res);
+    }
+  }
+);
+
+/**
+ * GET /analytics/summary
+ * Lightweight analytics dashboard for demo visibility
+ */
+router.get(
+  "/analytics/summary",
+  authMiddleware,
+  async (req: Request, res: Response) => {
+    try {
+      const summary = AnalyticsService.getSummary();
+
+      return res.status(200).json({
+        topPrompts: summary.topPrompts,
+        topVibes: summary.topVibes,
+        cacheHitRate: summary.cacheHitRate,
+        avgLatencyMs: summary.avgLatencyMs,
+        totalEvents: summary.totalEvents,
+      });
+    } catch (error) {
+      return handleError(error as Error, res);
+    }
+  }
+);
+
+/**
+ * POST /outfits/share
+ * Creates a shareable outfit link from a generated outfit response.
+ */
+router.post(
+  "/share",
+  authMiddleware,
+  async (req: Request, res: Response) => {
+    try {
+      const { outfit } = req.body as { outfit: OutfitResponse };
+
+      if (!outfit || !outfit.prompt || !Array.isArray(outfit.variants)) {
+        return res.status(400).json({
+          error: {
+            code: "INVALID_OUTFIT_PAYLOAD",
+            message: "Body must include a valid outfit response",
+          },
+        });
+      }
+
+      const shared = ShareService.createShare(outfit);
+
+      return res.status(201).json({
+        shareId: shared.id,
+        shareUrl: `/outfits/shared/${shared.id}`,
+      });
+    } catch (error) {
+      return handleError(error as Error, res);
+    }
+  }
+);
+
+/**
+ * GET /outfits/shared/:id
+ * Public endpoint for shared outfit retrieval.
+ */
+router.get(
+  "/shared/:id",
+  async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const shared = ShareService.getSharedOutfit(id);
+
+      if (!shared) {
+        return res.status(404).json({
+          error: {
+            code: "SHARED_OUTFIT_NOT_FOUND",
+            message: "Shared outfit not found",
+          },
+        });
+      }
+
+      return res.status(200).json({
+        id: shared.id,
+        createdAt: shared.createdAt,
+        outfit: shared.outfit,
+      });
     } catch (error) {
       return handleError(error as Error, res);
     }

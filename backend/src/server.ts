@@ -6,6 +6,7 @@ import { handleError } from "./utils/errorHandler";
 import { apiLimiter } from "./middleware/rateLimiter";
 import { verifySupabaseConnection } from "./config/supabase";
 import { verifyGeminiConnection } from "./config/aiConfig";
+import AnalyticsService from "./services/analyticsService";
 import PriceService from "./services/priceService";
 
 // Load environment variables
@@ -85,6 +86,17 @@ app.get("/health", async (req: Request, res: Response) => {
       timestamp: new Date().toISOString(),
     });
   }
+});
+
+app.get("/analytics/summary", (req: Request, res: Response) => {
+  const summary = AnalyticsService.getSummary();
+  return res.status(200).json({
+    topPrompts: summary.topPrompts,
+    topVibes: summary.topVibes,
+    cacheHitRate: summary.cacheHitRate,
+    avgLatencyMs: summary.avgLatencyMs,
+    totalEvents: summary.totalEvents,
+  });
 });
 
 /**

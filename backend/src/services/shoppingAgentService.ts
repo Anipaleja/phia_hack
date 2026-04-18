@@ -1,15 +1,22 @@
+import NodeCache from "node-cache";
 import { StyleItem, OutfitItem, PricePoint } from "../types";
+import { OutfitResponse } from "../types";
 import { AppError } from "../utils/errorHandler";
 import logger from "../utils/logger";
 import AIService from "./aiService";
+import AnalyticsService from "./analyticsService";
 import ImageService from "./imageService";
 import PriceService from "./priceService";
+import RecommendationService from "./recommendationService";
+import ShareService from "./shareService";
 
 /**
  * Shopping Agent Service: Orchestrates the entire shopping workflow
  * Combines AI style generation, image fetching, and price scraping
  * Implements 3-tier pricing logic (cheap, mid, expensive)
  */
+
+const outfitCache = new NodeCache({ stdTTL: 3600 });
 
 export class ShoppingAgentService {
   /**
@@ -163,6 +170,77 @@ export class ShoppingAgentService {
         { originalError: errorMsg }
       );
     }
+  }
+
+  static async buildOutfit(
+    prompt: string,
+    budgetTier: "all" | "cheap" | "mid" | "expensive" = "all"
+  ): Promise<OutfitResponse> {
+    const startTime = Date.now();
+    const cacheKey = `outfit:${budgetTier}:${prompt.trim().toLowerCase()}`;
+
+    const cachedResponse = outfitCache.get<OutfitResponse>(cacheKey);
+    if (cachedResponse) {
+      const latencyMs = Date.now() - startTime;
+      AnalyticsService.logEvent({
+        prompt,
+        timestamp: Date.now(),
+        latencyMs,
+        cacheHit: true,
+      });
+
+      const existingShare =
+        cachedResponse.shareId ||
+        ShareService.getShareByPrompt(prompt)?.id ||
+        ShareService.createShare(cachedResponse).id;
+
+      return {
+        ...cachedResponse,
+        shareId: existingShare,
+        cached: true,
+      };
+    }
+
+    const variants = await ShoppingAgentService.generateOutfit(prompt, budgetTier);
+    const summaryStats = ShoppingAgentService.calculateOutfitSummary(variants);
+    const recommendations = RecommendationService.generateRecommendations(prompt);
+
+    const response: OutfitResponse = {
+      prompt,
+      summary: `Built ${summaryStats.totalItems} pieces with average ${budgetTier === "all" ? "tiered" : budgetTier} pricing.`,
+      variants,
+      recommendations: {
+        label: "Like this style?",
+        items: recommendations,
+      },
+      cached: false,
+      created_at: new Date().toISOString(),
+    };
+
+    outfitCache.set(cacheKey, response);
+
+    const latencyMs = Date.now() - startTime;
+    AnalyticsService.logEvent({
+      prompt,
+      timestamp: Date.now(),
+      latencyMs,
+      cacheHit: false,
+    });
+
+    const shareId = ShareService.createShare(response).id;
+
+    // Keep a stable shared link for frequently repeated prompts.
+    const promptCount = AnalyticsService.getPromptCount(prompt) + 1;
+    ShareService.preGenerateShareForPopularPrompt(
+      prompt,
+      response,
+      promptCount
+    );
+
+    return {
+      ...response,
+      shareId,
+    };
   }
 
   /**

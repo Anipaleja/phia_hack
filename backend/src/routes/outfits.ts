@@ -1,12 +1,13 @@
 import { Router, Request, Response } from "express";
-import { authMiddleware } from "../middleware/auth";
-import { searchLimiter } from "../middleware/rateLimiter";
+import { authMiddleware, optionalAuthMiddleware } from "../middleware/auth";
+import { lookalikeLimiter, searchLimiter } from "../middleware/rateLimiter";
 import { handleError } from "../utils/errorHandler";
 import logger from "../utils/logger";
 import ShoppingAgentService from "../services/shoppingAgentService";
 import AIService from "../services/aiService";
 import AnalyticsService from "../services/analyticsService";
 import ShareService from "../services/shareService";
+import CelebrityLookalikeService from "../services/celebrityLookalikeService";
 import { supabaseClient } from "../config/supabase";
 import {
   GenerateStylesRequest,
@@ -124,6 +125,40 @@ router.post(
         itemCount: outfitResponse.variants.length,
         cached: outfitResponse.cached,
       });
+
+      return res.status(200).json(result);
+    } catch (error) {
+      return handleError(error as Error, res);
+    }
+  }
+);
+
+/**
+ * POST /outfits/lookalike
+ * Match uploaded selfie to closest celebrity from the hardcoded roster.
+ */
+router.post(
+  "/lookalike",
+  optionalAuthMiddleware,
+  lookalikeLimiter,
+  async (req: Request, res: Response) => {
+    try {
+      const imageDataUrl = typeof req.body?.imageDataUrl === "string" ? req.body.imageDataUrl : "";
+
+      if (!imageDataUrl) {
+        return res.status(400).json({
+          error: {
+            code: "MISSING_IMAGE",
+            message: "imageDataUrl is required",
+          },
+        });
+      }
+
+      logger.info("Processing celebrity lookalike request", {
+        userId: req.user?.id,
+      });
+
+      const result = await CelebrityLookalikeService.findClosestCelebrity(imageDataUrl);
 
       return res.status(200).json(result);
     } catch (error) {

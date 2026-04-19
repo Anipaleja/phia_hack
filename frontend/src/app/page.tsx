@@ -1,12 +1,14 @@
 "use client";
 
-import { FormEvent, MouseEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, FormEvent, MouseEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { deriveRecommendationLayout, RecommendationExperience } from "@/components/recommendation-experience";
 import { createPortal } from "react-dom";
 import {
+  CelebrityLookalikeResponse,
   SearchItem,
   SESSION_TOKEN_KEY,
   clearStoredToken,
+  findCelebrityLookalike,
   getAccessToken,
   login,
   searchOutfit,
@@ -48,6 +50,8 @@ const STYLE_CHAT_FORM_ID = "style-chat-form";
 const CHAT_HISTORY_KEY = "closer_chat_history_v1";
 const MAX_SAVED_SESSIONS = 30;
 const MIN_LOADING_MS = 5000;
+const LOOKALIKE_MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const LOOKALIKE_ALLOWED_MIME_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp"]);
 
 const FUNNY_LOADING_LINES = [
   "Asking a very opinionated mannequin for final approval...",
@@ -80,6 +84,21 @@ const PRESET_PROMPT_BUTTONS = [
     prompt: "Streetwear refresh with strong sneakers and layered textures.",
   },
 ];
+
+function toConfidencePercent(value: number): string {
+  const normalized = value > 1 && value <= 100 ? value / 100 : value;
+  const bounded = Math.max(0, Math.min(1, Number.isFinite(normalized) ? normalized : 0));
+  return `${Math.round(bounded * 100)}%`;
+}
+
+function getCelebrityInitials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((token) => token[0]?.toUpperCase() || "")
+    .join("");
+}
 
 const EXAMPLE_PRODUCTS: SearchItem[] = [
   {
@@ -393,6 +412,7 @@ function firstUserPreview(messages: ChatMessage[]): string {
 }
 
 export default function Home() {
+  const [activeTopTab, setActiveTopTab] = useState<"stylist" | "lookalike">("stylist");
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [basePrompt, setBasePrompt] = useState("");
@@ -407,9 +427,15 @@ export default function Home() {
   const [authPanel, setAuthPanel] = useState<"none" | "login" | "register">("none");
   const [authNotice, setAuthNotice] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [lookalikeImageDataUrl, setLookalikeImageDataUrl] = useState<string | null>(null);
+  const [lookalikeImageName, setLookalikeImageName] = useState("");
+  const [lookalikeResult, setLookalikeResult] = useState<CelebrityLookalikeResponse | null>(null);
+  const [lookalikeError, setLookalikeError] = useState<string | null>(null);
+  const [lookalikeLoading, setLookalikeLoading] = useState(false);
   const [chatHistory, setChatHistory] = useState<SavedChatSession[]>([]);
   const sessionIdRef = useRef<string | null>(null);
   const landingComposerRef = useRef<HTMLTextAreaElement | null>(null);
+  const lookalikeFileRef = useRef<HTMLInputElement | null>(null);
   const followUpThreadScrollRef = useRef<HTMLDivElement | null>(null);
   const [landingComposerFocused, setLandingComposerFocused] = useState(false);
   const [clientMounted, setClientMounted] = useState(false);
@@ -626,6 +652,69 @@ export default function Home() {
     }
   }
 
+  async function handleLookalikeImageChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    setLookalikeError(null);
+
+    if (!LOOKALIKE_ALLOWED_MIME_TYPES.has(file.type)) {
+      setLookalikeError("Use a JPEG, PNG, or WEBP image.");
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > LOOKALIKE_MAX_IMAGE_BYTES) {
+      setLookalikeError("Image must be 5MB or smaller.");
+      event.target.value = "";
+      return;
+    }
+
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = typeof reader.result === "string" ? reader.result : "";
+          resolve(result);
+        };
+        reader.onerror = () => reject(new Error("Could not read image file."));
+        reader.readAsDataURL(file);
+      });
+
+      if (!dataUrl) {
+        throw new Error("Could not read image file.");
+      }
+
+      setLookalikeImageDataUrl(dataUrl);
+      setLookalikeImageName(file.name);
+      setLookalikeResult(null);
+      setLookalikeError(null);
+    } catch (error) {
+      setLookalikeError(error instanceof Error ? error.message : "Failed to read image.");
+    }
+  }
+
+  async function runLookalikeMatch() {
+    if (!lookalikeImageDataUrl || lookalikeLoading) {
+      return;
+    }
+
+    setLookalikeLoading(true);
+    setLookalikeError(null);
+
+    try {
+      const result = await findCelebrityLookalike(lookalikeImageDataUrl);
+      setLookalikeResult(result);
+    } catch (error) {
+      setLookalikeResult(null);
+      setLookalikeError(error instanceof Error ? error.message : "Could not analyze image right now.");
+    } finally {
+      setLookalikeLoading(false);
+    }
+  }
+
   async function runSearchWithFollowUp(combinedPrompt: string) {
     const startedAtMs = Date.now();
     setLoading(true);
@@ -821,6 +910,29 @@ export default function Home() {
           )}
         </div>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveTopTab("stylist")}
+            className={`border px-2.5 py-1.5 text-[10px] uppercase tracking-[0.16em] transition ${
+              activeTopTab === "stylist"
+                ? "border-[rgba(37,35,33,0.26)] bg-[#ece8e0] text-stone-800"
+                : "border-[rgba(37,35,33,0.12)] bg-transparent text-stone-500 hover:text-stone-800"
+            }`}
+          >
+            Stylist
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTopTab("lookalike")}
+            className={`border px-2.5 py-1.5 text-[10px] uppercase tracking-[0.16em] transition ${
+              activeTopTab === "lookalike"
+                ? "border-[rgba(37,35,33,0.26)] bg-[#ece8e0] text-stone-800"
+                : "border-[rgba(37,35,33,0.12)] bg-transparent text-stone-500 hover:text-stone-800"
+            }`}
+          >
+            Lookalike
+          </button>
+
           {token ? (
             <button
               type="button"
@@ -959,6 +1071,105 @@ export default function Home() {
         </div>
       )}
 
+      {activeTopTab === "lookalike" ? (
+        <section className="relative z-[2] flex min-h-0 flex-1 flex-col overflow-hidden border border-[rgba(37,35,33,0.12)] bg-[#f1eee8]">
+          <div className="mx-auto w-full max-w-4xl overflow-y-auto px-5 py-8 sm:px-8 sm:py-10">
+            <p className="text-[10px] uppercase tracking-[0.24em] text-stone-500">Celebrity lookalike</p>
+            <h1 className="mt-3 font-editorial text-[2.15rem] leading-[0.95] tracking-[-0.03em] text-stone-900 sm:text-[2.8rem]">
+              Who do I look like most?
+            </h1>
+            <p className="mt-4 max-w-2xl text-[0.94rem] leading-[1.65] text-stone-600">
+              Upload a clear selfie and we will match you to the closest celebrity icon from our roster.
+            </p>
+
+            <div className="mt-7 grid gap-6 md:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+              <div className="border border-[rgba(37,35,33,0.14)] bg-[#f4f1ea] p-4 sm:p-5">
+                <input
+                  ref={lookalikeFileRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={handleLookalikeImageChange}
+                />
+                <button
+                  type="button"
+                  onClick={() => lookalikeFileRef.current?.click()}
+                  disabled={lookalikeLoading}
+                  className="border border-[rgba(37,35,33,0.2)] bg-[#ece8e0] px-3 py-2 text-[10px] uppercase tracking-[0.16em] text-stone-800 transition hover:border-[rgba(37,35,33,0.32)] disabled:cursor-not-allowed disabled:opacity-45"
+                >
+                  Upload selfie
+                </button>
+
+                <p className="mt-3 text-[0.78rem] text-stone-500">JPG, PNG, WEBP up to 5MB</p>
+
+                {lookalikeImageDataUrl ? (
+                  <div className="mt-4 overflow-hidden border border-[rgba(37,35,33,0.12)] bg-[#e6e0d6]">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- local preview of user-selected image */}
+                    <img src={lookalikeImageDataUrl} alt="Lookalike upload preview" className="h-80 w-full object-cover" />
+                  </div>
+                ) : (
+                  <div className="mt-4 flex h-80 items-center justify-center border border-[rgba(37,35,33,0.12)] bg-[#e6e0d6] px-6 text-center text-[0.86rem] text-stone-500">
+                    Add your photo to start matching.
+                  </div>
+                )}
+
+                <p className="mt-3 line-clamp-1 text-[0.78rem] text-stone-500">{lookalikeImageName || "No file selected"}</p>
+
+                <button
+                  type="button"
+                  onClick={runLookalikeMatch}
+                  disabled={!lookalikeImageDataUrl || lookalikeLoading}
+                  className="mt-4 w-full border border-stone-900 bg-stone-900 px-4 py-2.5 text-[10px] uppercase tracking-[0.18em] text-[#f4f1eb] transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-45"
+                >
+                  {lookalikeLoading ? "Matching..." : "Find my match"}
+                </button>
+
+                {lookalikeError ? <p className="mt-3 text-[0.82rem] text-red-800/90">{lookalikeError}</p> : null}
+              </div>
+
+              <div className="border border-[rgba(37,35,33,0.14)] bg-[#f4f1ea] p-4 sm:p-5">
+                {lookalikeResult ? (
+                  <>
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-stone-500">Closest icon</p>
+                    <h2 className="mt-2 font-editorial text-[2rem] leading-[0.95] tracking-[-0.03em] text-stone-900 sm:text-[2.35rem]">
+                      {lookalikeResult.closestCelebrity}
+                    </h2>
+                    <p className="mt-2 text-[0.9rem] text-stone-600">
+                      Match confidence: {toConfidencePercent(lookalikeResult.confidence)}
+                    </p>
+                    <p className="mt-1 text-[0.78rem] text-stone-500">Model: {lookalikeResult.provider}</p>
+
+                    <div className="mt-6 grid gap-2.5">
+                      {lookalikeResult.topMatches.map((match) => (
+                        <article
+                          key={`${match.celebrity}-${match.confidence}`}
+                          className="flex items-center gap-3 border border-[rgba(37,35,33,0.12)] bg-[#ede9e1] p-3"
+                        >
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[rgba(37,35,33,0.18)] bg-[#e3ddd3] text-[0.72rem] font-medium uppercase tracking-[0.06em] text-stone-800">
+                            {getCelebrityInitials(match.celebrity)}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate font-editorial text-[1.18rem] leading-[1.02] tracking-[-0.02em] text-stone-900">
+                              {match.celebrity}
+                            </p>
+                            <p className="text-[0.78rem] text-stone-500">{toConfidencePercent(match.confidence)} match</p>
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+
+                    <p className="mt-6 text-[0.78rem] leading-[1.5] text-stone-500">{lookalikeResult.note}</p>
+                  </>
+                ) : (
+                  <div className="flex h-full min-h-[22rem] items-center justify-center border border-[rgba(37,35,33,0.1)] bg-[#ebe7df] px-8 text-center text-[0.9rem] leading-[1.6] text-stone-500">
+                    Your closest celebrity match and icon cards will appear here once your image is analyzed.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : (
       <form
         id={STYLE_CHAT_FORM_ID}
         onSubmit={onSubmit}
@@ -1114,6 +1325,7 @@ export default function Home() {
           )}
         </section>
       </form>
+      )}
     </main>
   );
 }

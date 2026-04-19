@@ -127,3 +127,33 @@ export const searchLimiter = (req: any, res: any, next: any) => {
 
   next();
 };
+
+/**
+ * Celebrity lookalike endpoint limiter - 20 requests per hour per user/IP
+ * SECURITY: Image analysis is an expensive AI operation and can be abused.
+ */
+export const lookalikeLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req: any) => {
+    if (req.user?.id) {
+      return `lookalike:user:${req.user.id}`;
+    }
+    return `lookalike:ip:${req.ip}`;
+  },
+  handler: (req: any, res: any) => {
+    logger.warn("Lookalike rate limit exceeded", {
+      userId: req.user?.id,
+      ip: req.ip,
+    });
+
+    return res.status(429).json({
+      error: {
+        code: "LOOKALIKE_RATE_LIMIT_EXCEEDED",
+        message: "Too many lookalike requests. Please try again later.",
+      },
+    });
+  },
+});

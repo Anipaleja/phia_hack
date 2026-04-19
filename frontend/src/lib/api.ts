@@ -143,6 +143,19 @@ export type SearchResponse = {
   };
 };
 
+export type CelebrityLookalikeMatch = {
+  celebrity: string;
+  confidence: number;
+};
+
+export type CelebrityLookalikeResponse = {
+  closestCelebrity: string;
+  confidence: number;
+  topMatches: CelebrityLookalikeMatch[];
+  provider: "gemini" | "openai";
+  note: string;
+};
+
 /** Backend GET /health */
 export type HealthStatus = {
   status: string;
@@ -406,6 +419,39 @@ export async function searchOutfit(
       total: items.length,
     },
   };
+}
+
+/**
+ * POST /api/outfits/lookalike
+ * Optional auth: if user is signed in we send token, otherwise IP-based rate limit applies.
+ */
+export async function findCelebrityLookalike(
+  imageDataUrl: string
+): Promise<CelebrityLookalikeResponse> {
+  const token = getStoredToken();
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetchJsonOrThrow(apiUrl("/api/outfits/lookalike"), {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ imageDataUrl }),
+  });
+
+  const data = (await parseJsonSafe(response)) as
+    | CelebrityLookalikeResponse
+    | { error?: { message?: string; code?: string } };
+
+  if (!response.ok) {
+    throw new Error(extractApiErrorMessage(data, response));
+  }
+
+  return data as CelebrityLookalikeResponse;
 }
 
 /** @deprecated Use searchOutfit + mapOutfitToSearchItems — kept for older imports */

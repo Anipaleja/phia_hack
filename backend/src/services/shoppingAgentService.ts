@@ -267,11 +267,13 @@ export class ShoppingAgentService {
     const recommendations = RecommendationService.generateRecommendations(prompt);
 
     const summary = celebrityMatch
-      ? celebrityMatch.matchType === "exact"
-        ? `Using curated ${celebrityMatch.celebrity} style picks with 3 hardcoded hero pieces.`
-        : celebrityMatch.matchType === "mixed"
-        ? `Using a curated mixed style blend from ${celebrityMatch.celebrity}.`
-        : `Using curated ${celebrityMatch.celebrity}-inspired style picks based on your request.`
+      ? celebrityMatch.curatedTier === "cheaper_options"
+        ? `Budget alternatives for ${celebrityMatch.celebrity} (saved cheaper picks).`
+        : celebrityMatch.matchType === "exact"
+          ? `Using curated ${celebrityMatch.celebrity} style picks with 3 hardcoded hero pieces.`
+          : celebrityMatch.matchType === "mixed"
+            ? `Using a curated mixed style blend from ${celebrityMatch.celebrity}.`
+            : `Using curated ${celebrityMatch.celebrity}-inspired style picks based on your request.`
       : `Built ${summaryStats.totalItems} pieces with average ${budgetTier === "all" ? "tiered" : budgetTier} pricing.`;
 
     if (celebrityMatch) {

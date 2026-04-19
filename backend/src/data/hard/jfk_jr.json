@@ -29,8 +29,37 @@
     "style": "heritage",
     "color": "Grey",
     "material": "wool blend",
-    "productUrl": https://www.jcrew.com/p/mens/categories/clothing/blazers/suit-jackets/BZ636?display=all&fit=Classic&colorProductCode=BZ636&color_name=grey",
+    "productUrl": "https://www.jcrew.com/p/mens/categories/clothing/blazers/suit-jackets/BZ636?display=all&fit=Classic&colorProductCode=BZ636&color_name=grey",
     "price": 550,
     "imageUrl": "https://www.jcrew.com/s7-img-facade/BZ636_WZ4000?hei=1080&crop=0,0,864,0"
-  }
+  },
+  "cheaperOptions": [
+    {
+      "name": "Washed Cap",
+      "style": "heritage casual",
+      "color": "Navy",
+      "material": "cotton",
+      "productUrl": "https://kangol.com/products/washed-cap?variant=43364841259190",
+      "price": 60,
+      "imageUrl": "https://kangol.com/cdn/shop/files/K4274HT_NAVY.jpg?v=1769541892&width=1200"
+    },
+    {
+      "name": "Burgundy and Yellow Scarf",
+      "style": "",
+      "color": "",
+      "material": "",
+      "productUrl": "https://www.ebay.com/itm/306521296772?phia_ref=da93739c-e3b0-4e3b-b5ce-b7bbd85f3480&mkcid=1&mkrid=711-53200-19255-0&siteid=0&campid=5339031575&customid=%7B%7Bphia_merchant_product_url_id%7D%7D&toolid=10001&mkevt=1",
+      "price": 12,
+      "imageUrl": "https://i.ebayimg.com/images/g/3qgAAeSwXcto2TuO/s-l1600.webp"
+    },
+    {
+      "name": "Single-Breasted Blazer",
+      "style": "",
+      "color": "",
+      "material": "",
+      "productUrl": "https://www.calvinklein.us/en/sale/men/mens-sale-outerwear/wool-blend-single-breasted-blazer/40EM510-QQE.html?cid=paidsearch_ggl_us_nonbrandpla_bau_g-usa-pmax-nonbrand-men-apparel-nca_na_na__na&gclsrc=aw.ds&gad_source=1&gad_campaignid=22652312542&gbraid=0AAAAAD0wQr1CSuZeYzbaTExvcDdwt4SSl&gclid=CjwKCAjw14zPBhAuEiwAP3-EbyS6T5kGV59rluMWv4y87ugwBShC4EkEPM_mJ0C28JUvIGR13hoX1RoCNH4QAvD_BwE",
+      "price": 119,
+      "imageUrl": "https://calvinklein.scene7.com/is/image/CalvinKlein/40EM510_QQE_alternate1?wid=1728&qlt=80%2C0&resMode=sharp2&op_usm=0.9%2C1.0%2C8%2C0&iccEmbed=0&fmt=webp"
+    }
+  ]
 }

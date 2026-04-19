@@ -21,12 +21,16 @@ type CelebrityProfile = {
   article1: CelebrityArticle;
   article2: CelebrityArticle;
   article3: CelebrityArticle;
+  /** Optional budget alternatives (not wired into outfit response until filled). */
+  cheaperOptions?: CelebrityArticle[];
 };
 
 export type CelebrityStyleMatch = {
   celebrity: string;
   matchType: "exact" | "closest" | "mixed";
   outfitItems: OutfitItem[];
+  /** Hero pieces vs follow-up budget picks from `cheaperOptions` in JSON */
+  curatedTier?: "hero" | "cheaper_options";
 };
 
 class CelebrityStyleService {
@@ -137,6 +141,48 @@ class CelebrityStyleService {
 
   private static escapeRegex(value: string): string {
     return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  /**
+   * Follow-up asking for cheaper / budget alternatives (IT + EN).
+   * Only when the client sent a combined prompt that includes `Follow-up:` (second turn),
+   * so the first message never swaps hero pieces for cheaper options by accident.
+   */
+  static wantsCheaperBudgetFollowUp(prompt: string): boolean {
+    if (!/follow-up\s*:/i.test(prompt)) {
+      return false;
+    }
+
+    const lower = prompt.toLowerCase();
+    const parts = lower.split(/follow-up\s*:/i);
+    const haystack = parts.length > 1 ? parts[parts.length - 1]!.trim() : "";
+
+    const needles = [
+      "cheaper",
+      "cheap options",
+      "budget",
+      "affordable",
+      "lower price",
+      "less expensive",
+      "more affordable",
+      "più econom",
+      "piu econom",
+      "opzioni cheaper",
+      "opzioni economiche",
+      "meno caro",
+      "meno cara",
+      "più basso",
+      "piu basso",
+      "prezzo più basso",
+      "prezzo piu basso",
+      "risparmia",
+      "economiche",
+      "economico",
+      "sotto budget",
+      "low cost",
+    ];
+
+    return needles.some((n) => haystack.includes(n));
   }
 
   private static aliasMatchesPrompt(prompt: string, alias: string): boolean {
@@ -445,9 +491,11 @@ class CelebrityStyleService {
     };
   }
 
-  private static toOutfitItems(profile: CelebrityProfile): OutfitItem[] {
-    const articles = [profile.article1, profile.article2, profile.article3];
-
+  private static toOutfitItemsFromArticles(
+    profile: CelebrityProfile,
+    articles: CelebrityArticle[],
+    imageSource: "hardcoded-celebrity" | "hardcoded-celebrity-cheaper"
+  ): OutfitItem[] {
     return articles.map((article) => {
       const pricePoint = CelebrityStyleService.toPricePoint(article);
 
@@ -459,7 +507,7 @@ class CelebrityStyleService {
         images: [
           {
             url: article.imageUrl,
-            source: "hardcoded-celebrity",
+            source: imageSource,
             alt: `${profile.celebrity} ${article.name}`,
           },
         ],
@@ -505,6 +553,14 @@ class CelebrityStyleService {
     });
   }
 
+  private static toOutfitItems(profile: CelebrityProfile): OutfitItem[] {
+    return CelebrityStyleService.toOutfitItemsFromArticles(
+      profile,
+      [profile.article1, profile.article2, profile.article3],
+      "hardcoded-celebrity"
+    );
+  }
+
   static async resolvePrompt(prompt: string): Promise<CelebrityStyleMatch | null> {
     const profiles = CelebrityStyleService.loadProfiles();
     if (profiles.length === 0) {
@@ -532,19 +588,34 @@ class CelebrityStyleService {
     }
 
     if (mentionedCelebrities.length > 0) {
+      const primary = mentionedCelebrities[0];
+      const cheaperMentioned = CelebrityStyleService.tryCheaperOptionsOutfit(primary, prompt);
+      if (cheaperMentioned) {
+        return {
+          celebrity: primary.celebrity,
+          matchType: "exact",
+          ...cheaperMentioned,
+        };
+      }
       return {
-        celebrity: mentionedCelebrities[0].celebrity,
+        celebrity: primary.celebrity,
         matchType: "exact",
-        outfitItems: CelebrityStyleService.toOutfitItems(mentionedCelebrities[0]),
+        outfitItems: CelebrityStyleService.toOutfitItems(primary),
+        curatedTier: "hero",
       };
     }
 
     const exact = CelebrityStyleService.findExactCelebrity(prompt, profiles);
     if (exact) {
+      const cheaper = CelebrityStyleService.tryCheaperOptionsOutfit(exact, prompt);
+      if (cheaper) {
+        return { celebrity: exact.celebrity, matchType: "exact", ...cheaper };
+      }
       return {
         celebrity: exact.celebrity,
         matchType: "exact",
         outfitItems: CelebrityStyleService.toOutfitItems(exact),
+        curatedTier: "hero",
       };
     }
 
@@ -557,10 +628,53 @@ class CelebrityStyleService {
       return null;
     }
 
+    const cheaperClosest = CelebrityStyleService.tryCheaperOptionsOutfit(closest, prompt);
+    if (cheaperClosest) {
+      return { celebrity: closest.celebrity, matchType: "closest", ...cheaperClosest };
+    }
+
     return {
       celebrity: closest.celebrity,
       matchType: "closest",
       outfitItems: CelebrityStyleService.toOutfitItems(closest),
+      curatedTier: "hero",
+    };
+  }
+
+  /**
+   * If the user asked for cheaper options and the profile has complete `cheaperOptions`, return those rows.
+   */
+  private static tryCheaperOptionsOutfit(
+    profile: CelebrityProfile,
+    prompt: string
+  ): Pick<CelebrityStyleMatch, "outfitItems" | "curatedTier"> | null {
+    if (!CelebrityStyleService.wantsCheaperBudgetFollowUp(prompt)) {
+      return null;
+    }
+
+    const raw = profile.cheaperOptions ?? [];
+    const complete = raw.filter((a) => CelebrityStyleService.isCompleteArticle(a));
+
+    if (complete.length === 0) {
+      logger.info("Cheaper follow-up: no complete cheaperOptions in profile", {
+        celebrity: profile.celebrity,
+        configured: raw.length,
+      });
+      return null;
+    }
+
+    logger.info("Cheaper follow-up: serving saved cheaperOptions", {
+      celebrity: profile.celebrity,
+      count: complete.length,
+    });
+
+    return {
+      outfitItems: CelebrityStyleService.toOutfitItemsFromArticles(
+        profile,
+        complete,
+        "hardcoded-celebrity-cheaper"
+      ),
+      curatedTier: "cheaper_options",
     };
   }
 }

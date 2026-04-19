@@ -16,8 +16,6 @@ The product focuses on keeping this loop fast and understandable rather than try
 
 ## Screenshot
 
-Add your product screenshot here.
-
 ![Closer product screenshot](./docs/gallery.jpg)
 
 ## How It Works (High Level)

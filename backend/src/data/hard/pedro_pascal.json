@@ -6,30 +6,30 @@
     "pascal"
   ],
   "article1": {
-    "name": "Ashby Waxed Jacket",
+    "name": "Flannel-Lined Denim Trucker Jacket",
     "style": "rugged classic",
-    "color": "olive",
-    "material": "waxed cotton",
-    "productUrl": "https://www.barbour.com/us/barbour-ashby-waxed-jacket",
-    "price": 400,
-    "imageUrl": "https://images.unsplash.com/photo-1617137968427-85924c800a22?auto=format&fit=crop&w=1200&q=80"
+    "color": "Dark Medium Wash",
+    "material": "denim",
+    "productUrl": "https://huckberry.com/store/flint-and-tinder/category/p/83342-flannel-lined-denim-trucker",
+    "price": 30,
+    "imageUrl": "https://huckberry.imgix.net/spree/products/731570/original/83342_Flint_and_Tinder_Flannel-Lined_Denim_Trucker_Jacket_Dark_Medium_Wash_01.jpg?auto=format%2C%20compress&crop=top&fit=fill&cs=tinysrgb&ar=1%3A1&ixlib=react-9.8.1&w=1678"
   },
   "article2": {
-    "name": "Pima Curved Hem Tee",
+    "name": "Classic Patch Pocket Suit Jacket",
     "style": "minimal",
-    "color": "black",
-    "material": "pima cotton",
-    "productUrl": "https://www.buckmason.com/products/black-pima-curved-hem-tee",
+    "color": "khaki",
+    "material": "wool",
+    "productUrl": "https://huckberry.com/store/wills/category/p/90269-classic-blazer",
     "price": 55,
-    "imageUrl": "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=1200&q=80"
+    "imageUrl": "https://huckberry.imgix.net/spree/products/792836/original/90269_Wills_Rosedale_Classic_Patch_Pocket_Suit_Jacket_Khaki_01_Product_on_White.jpg?auto=format%2C%20compress&crop=top&fit=fill&cs=tinysrgb&ar=1%3A1&ixlib=react-9.8.1&w=1678"
   },
   "article3": {
-    "name": "Legend Chelsea Boot",
+    "name": "Atlantico Stripe Shirt",
     "style": "sleek",
-    "color": "black matte",
-    "material": "leather",
-    "productUrl": "https://thursdayboots.com/products/mens-legend-chelsea-boot-black-matte",
-    "price": 199,
-    "imageUrl": "https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&w=1200&q=80"
+    "color": "green",
+    "material": "cotton",
+    "productUrl": "https://huckberry.com/store/portuguese-flannel/category/p/97740-atlantico-stripe-shirt",
+    "price": 60,
+    "imageUrl": "https://huckberry.imgix.net/spree/products/808374/original/97740_Portuguese_Flannel_Atlantico_Stripe_Shirt_Green_01_Product_on_White.jpg?auto=format%2C%20compress&crop=top&fit=fill&cs=tinysrgb&ar=1%3A1&ixlib=react-9.8.1&w=1678"
   }
 }

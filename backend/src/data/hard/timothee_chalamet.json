@@ -6,30 +6,30 @@
     "chalamet"
   ],
   "article1": {
-    "name": "Cropped Satin Bomber",
+    "name": "Topman faux leather A2 jacket",
     "style": "avant",
-    "color": "midnight",
-    "material": "satin",
+    "color": "brown",
+    "material": "faux leather",
     "productUrl": "https://www.asos.com/us/topman/topman-faux-leather-a2-jacket-in-brown/prd/206988853",
-    "price": 3200,
-    "imageUrl": "https://images.unsplash.com/photo-1516257984-b1b4d707412e?auto=format&fit=crop&w=1200&q=80"
+    "price": 71,
+    "imageUrl": "https://images.asos-media.com/products/topman-faux-leather-a2-jacket-in-brown/206988853-1-brown?$n_320w$&wid=317&fit=constrain"
   },
   "article2": {
-    "name": "Pleated Wide Trouser",
+    "name": "ASOS DESIGN baggy parachute cord pants",
     "style": "runway",
-    "color": "black",
+    "color": "cream",
     "material": "wool",
     "productUrl": "https://www.asos.com/us/asos-design/asos-design-baggy-parachute-cord-pants-in-cream/prd/207122479",
-    "price": 980,
-    "imageUrl": "https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?auto=format&fit=crop&w=1200&q=80"
+    "price": 53,
+    "imageUrl": "https://images.asos-media.com/products/asos-design-baggy-parachute-cord-pants-in-cream/207122479-1-stone?$n_320w$&wid=317&fit=constrain"
   },
   "article3": {
-    "name": "Harness Boot",
+    "name": "Nike Air More Uptempo sneakers ",
     "style": "edgy",
-    "color": "black",
+    "color": "stone with red",
     "material": "leather",
     "productUrl": "https://www.asos.com/us/nike/nike-air-more-uptempo-sneakers-in-stone-with-red-detail/prd/205547690",
-    "price": 950,
-    "imageUrl": "https://images.unsplash.com/photo-1527010154944-f2241763d806?auto=format&fit=crop&w=1200&q=80"
+    "price": 85,
+    "imageUrl": "https://images.asos-media.com/products/nike-air-more-uptempo-sneakers-in-stone-with-red-detail/205547690-1-stone?$n_320w$&wid=317&fit=constrain"
   }
 }

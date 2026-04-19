@@ -5,30 +5,30 @@
     "zendaya coleman"
   ],
   "article1": {
-    "name": "Structured Oversized Blazer",
+    "name": "Rollneck Sweater",
     "style": "tailored",
-    "color": "charcoal",
-    "material": "wool",
+    "color": "white",
+    "material": "cotton blend",
     "productUrl": "https://www.mrporter.com/en-us/mens/product/fear-of-god-essentials/clothing/rollnecks/logo-appliqued-cable-knit-cotton-blend-rollneck-sweater/29419655931607151?cm_mmc=PartnerizeAM-_-skimlinks_phg-_-Subaffiliate-_-305950&utm_source=partnerize&utm_medium=affiliation&utm_campaign=xq_305950&utm_content=skimlinks_phg&clickref=1101lDfpC4Kq&adj_t=19hgz889&adj_campaign=xq_305950",
-    "price": 690,
-    "imageUrl": "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=1200&q=80"
+    "price": 149.99,
+    "imageUrl": "https://www.mrporter.com/variants/images/29419655931607151/in/w2000_q80.jpg"
   },
   "article2": {
-    "name": "Satin Column Skirt",
-    "style": "minimalist",
-    "color": "espresso",
-    "material": "satin",
+    "name": "The Effortless Pant™",
+    "style": "high-waisted and wide-legged",
+    "color": "tyson chk brown",
+    "material": "polyester",
     "productUrl": "https://www.aritzia.com/us/en/product/the-effortless-pant%E2%84%A2/127510021.html?utm_id=20673883861------&utm_source=google&utm_medium=cpc&gad_source=1&gad_campaignid=20664281931&gbraid=0AAAAADn95Oae3w1T7MmYGw8bNJ5aKc36x&gclid=CjwKCAjw14zPBhAuEiwAP3-EbxsAW8A9cNzpXG5qpOUvoJBBJE0FHvrHdWb3N-a4MpAjzwg4VaL7oRoCrXgQAvD_BwE",
-    "price": 395,
+    "price": 159.99,
     "imageUrl": "https://images.unsplash.com/photo-1554412933-514a83d2f3c8?auto=format&fit=crop&w=1200&q=80"
   },
   "article3": {
-    "name": "Square Toe Slingback Heel",
+    "name": "Cloudnova Moon",
     "style": "editorial",
-    "color": "black",
-    "material": "patent leather",
+    "color": "Dew/Spruce",
+    "material": "leather",
     "productUrl": "https://www.on.com/en-us/products/cloudnova-moon-w-3wg1074/womens/dew-spruce-shoes-3WG10745461?utm_source=awin&utm_medium=affiliate&utm_campaign=103504-Future%20Publishing.&utm_content=0&utm_term=TechRadar&product_id=0&promotype=Editorial%20Content&awid=123518_1776568800_52951788815cf27c75684d740c9dde18&account=us&sv1=affiliate&sv_campaign_id=103504&awc=123518_1776568800_52951788815cf27c75684d740c9dde18",
-    "price": 420,
-    "imageUrl": "https://images.unsplash.com/photo-1515347619252-60a4bf4fff4f?auto=format&fit=crop&w=1200&q=80"
+    "price": 199.99,
+    "imageUrl": "https://images.ctfassets.net/hnk2vsx53n6l/7qSjgP0xJuprgTKspdxN1M/42e527ec02a0b7d637ea5c13208e398f/5437326790b87e868ae5476efa1f3135c7dcd458.png?w=1600&h=1600&fm=avif&f=center&fit=fill&q=80"
   }
 }

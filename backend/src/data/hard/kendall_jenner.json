@@ -5,30 +5,30 @@
     "kendall"
   ],
   "article1": {
-    "name": "Cropped Biker Jacket",
+    "name": "Cropped Rib Tank Top",
     "style": "model-off-duty",
-    "color": "black",
-    "material": "lamb leather",
+    "color": "ivory",
+    "material": "cotton",
     "productUrl": "https://www.fwrd.com/product-eterne-cropped-rib-tank-top-in-ivory/ETEF-WS80/?cjdata=MXxOfDB8WXww&AID=15733794&PID=100046987&utm_medium=affiliate&utm_source=cj&source=cj&utm_campaign=glob_p_5370367&cjevent=72f1ceed3ba011f18064023a0a82b824",
-    "price": 499,
-    "imageUrl": "https://images.unsplash.com/photo-1495385794356-15371f348c31?auto=format&fit=crop&w=1200&q=80"
+    "price": 70,
+    "imageUrl": "https://is4.fwrdassets.com/images/p/fw/z/ETEF-WS80_V1.jpg"
   },
   "article2": {
-    "name": "Straight-Leg Denim",
+    "name": "501 Mid Thigh Short",
     "style": "clean",
-    "color": "vintage blue",
+    "color": "white denim",
     "material": "denim",
     "productUrl": "https://www.revolve.com/501-mid-thigh-short/dp/LEIV-WF139/?cjdata=MXxOfDB8WXww&AID=11017645&PID=100046987&utm_medium=affiliate&utm_source=cj&source=cj&utm_campaign=glob_p_5370367&cjevent=757955f53ba011f18176027d0a82b820",
-    "price": 238,
-    "imageUrl": "https://images.unsplash.com/photo-1582418702059-97ebafb35d09?auto=format&fit=crop&w=1200&q=80"
+    "price": 60,
+    "imageUrl": "https://is4.revolveassets.com/images/p4/n/z/LEIV-WF139_V1.jpg"
   },
   "article3": {
-    "name": "Square-Toe Ankle Boot",
+    "name": "Bente Boots In Black Leather",
     "style": "minimal",
-    "color": "espresso",
+    "color": "black leather",
     "material": "leather",
-    "productUrl": "https://clothbase.com/items/066b6f36_ann-demeulemeester-bente-boots-in-black-leather_ann-demeulemeester",
-    "price": 520,
-    "imageUrl": "https://images.unsplash.com/photo-1605733160314-4fc7dac4bb16?auto=format&fit=crop&w=1200&q=80"
+    "productUrl": "https://example.com",
+    "price": 30,
+    "imageUrl": "https://cdn.clothbase.com/uploads/36b76091-282f-4ca2-9b81-1b5836345ca6/ef6a7af4ae830c3ee49ee5f51a269b34.jpg"
   }
 }

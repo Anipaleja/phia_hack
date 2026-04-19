@@ -6,30 +6,30 @@
     "robyn fenty"
   ],
   "article1": {
-    "name": "Leather Trench Coat",
+    "name": "Oversized Shirt in Poplin",
     "style": "bold",
-    "color": "oxblood",
-    "material": "leather",
+    "color": "Blue Stripe",
+    "material": "cotton",
     "productUrl": "https://www.gapfactory.com/browse/product.do?pid=683344121&vid=1&tid=gfpl000038&kwid=1&ds_agid=17969292638-&gclsrc=aw.ds&gad_source=1&gad_campaignid=17969471966&gbraid=0AAAAAD_AT8uT0MZpnQ9_wg5yc5oFrqqiW&gclid=CjwKCAjw14zPBhAuEiwAP3-Eb5Wup73I6guCSeZ7ngnm2--Y_KejjMvP-61_7vAP336qbwsOZ7GCTxoCzu4QAvD_BwE#pdp-page-content",
-    "price": 845,
-    "imageUrl": "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1200&q=80"
+    "price": 29.99,
+    "imageUrl": "https://www.gapfactory.com/webcontent/0061/274/110/cn61274110.jpg"
   },
   "article2": {
-    "name": "Wide-Leg Cargo Pant",
+    "name": "Nidia Denim Slouchy Boots",
     "style": "street luxe",
-    "color": "olive",
-    "material": "cotton twill",
+    "color": "blue",
+    "material": "valour denim",
     "productUrl": "https://www.refinery29.com/en-us/shop/product/nidia-denim-slouchy-boots-108117",
-    "price": 495,
-    "imageUrl": "https://images.unsplash.com/photo-1475180098004-ca77a66827be?auto=format&fit=crop&w=1200&q=80"
+    "price": 90.30,
+    "imageUrl": "https://s2.r29static.com/bin/entry/815/x,85/1905122/image.webp"
   },
   "article3": {
-    "name": "Crystal Strap Mule",
+    "name": "Short Cord-Collar Denim Jacket",
     "style": "statement",
-    "color": "silver",
-    "material": "leather and crystal",
+    "color": "blue denim",
+    "material": "denim",
     "productUrl": "https://www.stories.com/en-us/product/short-cord-collar-denim-jacket-dark-blue-1320098001/?utm_source=google&utm_medium=cpc&utm_campaign=us-stories-evg-evg-paidsearch-google-conversion-purchase-catalogsales-multi-shopping-brand&utm_content=brand&utm_id=6497101321&gad_source=1&gad_campaignid=6497101321&gbraid=0AAAAADCH3pQH4BZejThGmRstOAN39JOhB&gclid=CjwKCAjw14zPBhAuEiwAP3-Eb7wEsKHTzEjuFHM0h7vU9m8-I5cQ13lQZPSQRpAmrDh6dWkPTn1-XhoCV2MQAvD_BwE",
-    "price": 1150,
-    "imageUrl": "https://images.unsplash.com/photo-1591369822096-ffd140ec948f?auto=format&fit=crop&w=1200&q=80"
+    "price": 179.99,
+    "imageUrl": "https://media.stories.com/assets/005/73/b2/73b276445e8edb2615a949c8eb0d705f331e85fd_xxl-1.jpg?imwidth=1024"
   }
 }

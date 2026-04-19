@@ -9,14 +9,19 @@ import {
   type SearchItem,
 } from "@/lib/api";
 
-function toPathPoints(values: number[], width: number, height: number, padding: number) {
+type ChartPadding = { left: number; right: number; top: number; bottom: number };
+
+function toPathPoints(values: number[], width: number, height: number, padding: ChartPadding) {
   const min = Math.min(...values);
   const max = Math.max(...values);
   const range = max - min || 1;
 
+  const plotW = width - padding.left - padding.right;
+  const plotH = height - padding.top - padding.bottom;
+
   return values.map((value, index) => {
-    const x = padding + (index / Math.max(1, values.length - 1)) * (width - padding * 2);
-    const y = padding + (1 - (value - min) / range) * (height - padding * 2);
+    const x = padding.left + (index / Math.max(1, values.length - 1)) * plotW;
+    const y = padding.top + (1 - (value - min) / range) * plotH;
     return { x, y };
   });
 }
@@ -82,6 +87,7 @@ function TrendChart({
   delay,
   id,
   windowLabel,
+  currency,
 }: {
   title: string;
   subtitle: string;
@@ -91,6 +97,7 @@ function TrendChart({
   delay: number;
   id: string;
   windowLabel: string;
+  currency: string;
 }) {
   if (values.length === 0) {
     return (
@@ -102,7 +109,7 @@ function TrendChart({
 
   const width = 620;
   const height = 220;
-  const padding = 20;
+  const padding: ChartPadding = { left: 56, right: 20, top: 20, bottom: 22 };
   const points = toPathPoints(values, width, height, padding);
 
   const linePath = points
@@ -112,7 +119,9 @@ function TrendChart({
   const first = points[0];
   const last = points[points.length - 1];
 
-  const areaPath = `${linePath} L ${last.x.toFixed(2)} ${(height - padding).toFixed(2)} L ${first.x.toFixed(2)} ${(height - padding).toFixed(2)} Z`;
+  const areaPath = `${linePath} L ${last.x.toFixed(2)} ${(height - padding.bottom).toFixed(
+    2
+  )} L ${first.x.toFixed(2)} ${(height - padding.bottom).toFixed(2)} Z`;
 
   const gradientId = `${id}-fill`;
   const lineStyle = {
@@ -124,6 +133,25 @@ function TrendChart({
   const dotStyle = {
     "--trend-delay": `${Math.max(0, delay + 0.75)}s`,
   } as CSSProperties;
+
+  const minVal = Math.min(...values);
+  const maxVal = Math.max(...values);
+  const range = maxVal - minVal || 1;
+  const pad = range * 0.08;
+  const axisMin = Math.max(0, minVal - pad);
+  const axisMax = maxVal + pad;
+  const tickCount = 5;
+  const ticks = Array.from({ length: tickCount }, (_, i) => {
+    const t = i / (tickCount - 1); // 0..1
+    return axisMax - t * (axisMax - axisMin);
+  });
+
+  const plotH = height - padding.top - padding.bottom;
+  const yForValue = (v: number) => padding.top + (1 - (v - axisMin) / (axisMax - axisMin || 1)) * plotH;
+
+  const normalizedLabels = labels.map((l) => (l || "").trim()).filter(Boolean);
+  const uniqueLabelCount = new Set(normalizedLabels).size;
+  const showXAxisLabels = uniqueLabelCount > 1;
 
   return (
     <div className="border border-[rgba(37,35,33,0.14)] bg-[#f7f4ee] p-3.5 sm:p-4">
@@ -143,20 +171,31 @@ function TrendChart({
           </linearGradient>
         </defs>
 
-        {[0.2, 0.4, 0.6, 0.8].map((ratio) => {
-          const y = padding + ratio * (height - padding * 2);
+        {/* Y axis ticks + horizontal gridlines */}
+        {ticks.map((tickValue, idx) => {
+          const y = yForValue(tickValue);
           return (
-            <line
-              key={ratio}
-              x1={padding}
-              y1={y}
-              x2={width - padding}
-              y2={y}
-              stroke="rgba(37,35,33,0.1)"
-              strokeWidth="1"
-              strokeDasharray="4 7"
-              className="trend-grid-fade"
-            />
+            <g key={`${tickValue}-${idx}`} className="trend-grid-fade">
+              <line
+                x1={padding.left}
+                y1={y}
+                x2={width - padding.right}
+                y2={y}
+                stroke="rgba(37,35,33,0.1)"
+                strokeWidth="1"
+                strokeDasharray="4 7"
+              />
+              <text
+                x={padding.left - 10}
+                y={y}
+                textAnchor="end"
+                dominantBaseline="middle"
+                fill="rgba(37,35,33,0.55)"
+                fontSize="11"
+              >
+                {formatMoney(tickValue, currency)}
+              </text>
+            </g>
           );
         })}
 
@@ -174,11 +213,13 @@ function TrendChart({
         />
       </svg>
 
-      <div className="mt-2 flex items-center justify-between text-[0.74rem] text-stone-500">
-        <span>{labels[0]}</span>
-        <span>{labels[Math.floor(labels.length / 2)]}</span>
-        <span>{labels[labels.length - 1]}</span>
-      </div>
+      {showXAxisLabels ? (
+        <div className="mt-2 flex items-center justify-between text-[0.74rem] text-stone-500">
+          <span>{labels[0]}</span>
+          <span>{labels[Math.floor(labels.length / 2)]}</span>
+          <span>{labels[labels.length - 1]}</span>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -403,6 +444,7 @@ export function ProductTrendButton({
                     ? `${trend.marketScanCount} listings`
                     : `${trend.observations.length} real points`
                 }
+                currency={item.currency}
               />
 
               <TrendChart
@@ -418,6 +460,7 @@ export function ProductTrendButton({
                 delay={0.2}
                 id={`${safeId(item.id || item.title)}-smoothed`}
                 windowLabel="Real-data smoothing"
+                currency={item.currency}
               />
             </div>
 

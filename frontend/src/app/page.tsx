@@ -189,14 +189,14 @@ const HOMEPAGE_CUTOUTS: {
   {
     id: "cutout-5",
     src: "/cutouts/home-05.png",
-    wrapClass: "left-[52%] top-[63%] hidden h-[5.5rem] lg:block xl:h-[6.5rem] 2xl:h-[7rem]",
+    wrapClass: "left-[53%] top-[56%] hidden h-[5.5rem] lg:block xl:h-[6.5rem] 2xl:h-[7rem] 2xl:top-[54%]",
     imgClass: "max-w-[min(48vw,22rem)] rotate-[3deg]",
     driftMs: 7600,
   },
   {
     id: "cutout-6",
     src: "/cutouts/home-06.png",
-    wrapClass: "left-[58%] top-[73%] hidden h-[5rem] lg:block xl:h-[5.75rem] 2xl:h-[6.25rem]",
+    wrapClass: "left-[59%] top-[64%] hidden h-[5rem] lg:block xl:h-[5.75rem] 2xl:h-[6.25rem] 2xl:top-[60%]",
     imgClass: "max-w-[min(50vw,23rem)] -rotate-[3deg]",
     driftMs: 6800,
   },
@@ -527,7 +527,6 @@ export default function Home() {
   const sessionIdRef = useRef<string | null>(null);
   const landingComposerRef = useRef<HTMLTextAreaElement | null>(null);
   const lookalikeFileRef = useRef<HTMLInputElement | null>(null);
-  const followUpThreadScrollRef = useRef<HTMLDivElement | null>(null);
   const [landingComposerFocused, setLandingComposerFocused] = useState(false);
   const [clientMounted, setClientMounted] = useState(false);
   const loadingTickerRef = useRef<number | null>(null);
@@ -539,7 +538,6 @@ export default function Home() {
     !hasConversationStarted && landingComposerFocused && input.trim().length > 0;
 
   const recLayout = useMemo(() => deriveRecommendationLayout(messages), [messages]);
-  const isFollowUpThread = recLayout.followUpQueries.length > 0;
   const stylistSharePayload = useMemo(() => buildStylistSharePayload(messages), [messages]);
   const lookalikeSharePayload = useMemo(
     () => (lookalikeResult ? buildLookalikeSharePayload(lookalikeResult) : null),
@@ -589,13 +587,6 @@ export default function Home() {
       // selection not supported for this input type in some environments
     }
   }, [isLandingComposerCentered]);
-
-  useEffect(() => {
-    if (!isFollowUpThread) return;
-    const el = followUpThreadScrollRef.current;
-    if (!el) return;
-    el.scrollTop = el.scrollHeight;
-  }, [isFollowUpThread, messages, loading]);
 
   function goHome() {
     if (hasConversationStarted) {
@@ -1416,7 +1407,7 @@ export default function Home() {
         className="relative z-[2] flex min-h-0 flex-1 flex-col overflow-hidden"
       >
         <section
-          className={`absolute inset-0 overflow-x-hidden overflow-y-hidden transition-opacity duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          className={`absolute inset-0 overflow-x-hidden overflow-y-auto transition-opacity duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
             hasConversationStarted ? "pointer-events-none opacity-0" : "opacity-100"
           }`}
           aria-hidden={hasConversationStarted}
@@ -1432,13 +1423,13 @@ export default function Home() {
             />
           ))}
 
-          <div className="relative z-10 mx-auto flex h-full min-h-0 w-full max-w-[82rem] flex-col px-1 pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] pt-2 sm:pt-3">
-            <div className="grid min-h-0 flex-1 grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(18rem,0.82fr)] lg:gap-12 xl:gap-16">
+          <div className="relative z-10 mx-auto flex h-full min-h-0 w-full max-w-[82rem] flex-col px-1 pb-48 pt-2 sm:pt-3">
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(18rem,0.82fr)] lg:gap-12 xl:gap-16">
               <div className="flex min-h-0 flex-col items-start text-left">
                 <p className="hero-enter-1 text-[10px] uppercase tracking-[0.3em] text-stone-500">
                   Closer.ai
                 </p>
-                <h1 className="hero-enter-2 font-editorial mt-5 max-w-[9.5ch] text-[3.15rem] leading-[0.94] tracking-[-0.045em] text-stone-900 sm:text-[4.3rem] lg:text-[5.35rem] xl:text-[6rem]">
+                <h1 className="hero-enter-2 font-editorial mt-4 max-w-[9.5ch] text-[2.85rem] leading-[0.92] tracking-[-0.045em] text-stone-900 sm:text-[4.15rem] lg:text-[5.15rem] xl:text-[5.8rem]">
                   Turn a style icon into a wardrobe worth wearing.
                 </h1>
               </div>
@@ -1497,9 +1488,10 @@ export default function Home() {
                 document.body
               )}
             {!isLandingComposerCentered && (
-              <div className="relative mt-8 w-full shrink-0 sm:mt-10">
-                <div className="relative z-10 mx-auto flex min-h-[6rem] w-full max-w-[82rem] items-end justify-start sm:min-h-[6.5rem]">
-                  <div className="w-full max-w-[48rem]">{composer("landing")}</div>
+              <div className="sticky bottom-0 left-0 right-0 mt-10 w-full">
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-[linear-gradient(to_top,rgba(245,243,239,0.98)_0%,rgba(245,243,239,0.86)_45%,transparent_100%)]" />
+                <div className="relative z-10 mx-auto flex w-full max-w-[82rem] items-end justify-start px-1 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] pt-6">
+                  <div className="pointer-events-auto w-full max-w-[48rem]">{composer("landing")}</div>
                 </div>
               </div>
             )}
@@ -1512,56 +1504,21 @@ export default function Home() {
           }`}
           aria-hidden={!hasConversationStarted}
         >
-          {isFollowUpThread ? (
-            <>
-              <div
-                ref={followUpThreadScrollRef}
-                className="relative z-0 min-h-0 flex-1 overflow-y-auto pb-[min(42vh,13rem)] pr-1 pt-2"
-              >
-                <div className="mx-auto flex w-full max-w-4xl flex-col gap-7">
-                  {messages.map((message, index) => (
-                    <MessageBubble
-                      key={`${message.role}-${index}`}
-                      message={message}
-                      isSignedIn={Boolean(token)}
-                      onOpenLogin={() => {
-                        setAuthPanel("login");
-                        setAuthError(null);
-                        setAuthNotice(null);
-                      }}
-                    />
-                  ))}
-                  {loading && (
-                    <div className="max-w-3xl border border-[rgba(37,35,33,0.12)] bg-[#f3f0ea] px-6 py-4 text-[0.9rem] text-stone-600">
-                      {loadingLine}
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="absolute inset-x-0 bottom-0 z-10 border-t border-[rgba(37,35,33,0.1)] bg-[#f1eee8] px-6 pb-8 pt-5 shadow-[0_-10px_36px_rgba(24,23,21,0.07)]">
-                <div className="mx-auto w-full max-w-4xl">{composer("surface")}</div>
-              </div>
-            </>
-          ) : (
-            <RecommendationExperience
-              primaryQuery={recLayout.primaryQuery}
-              followUpQueries={recLayout.followUpQueries}
-              explanationBlocks={recLayout.explanationBlocks}
-              sections={recLayout.sections}
-              lockedPreview={recLayout.lockedPreview}
-              lockedProducts={recLayout.lockedProducts}
-              loading={loading}
-              loadingMessage={loadingLine}
-              isSignedIn={Boolean(token)}
-              onOpenLogin={() => {
-                setAuthPanel("login");
-                setAuthError(null);
-                setAuthNotice(null);
-              }}
-              onHome={goHome}
-              composerSlot={composer("surface")}
-            />
-          )}
+          <RecommendationExperience
+              timeline={recLayout.timeline}
+            lockedPreview={recLayout.lockedPreview}
+            lockedProducts={recLayout.lockedProducts}
+            loading={loading}
+            loadingMessage={loadingLine}
+            isSignedIn={Boolean(token)}
+            onOpenLogin={() => {
+              setAuthPanel("login");
+              setAuthError(null);
+              setAuthNotice(null);
+            }}
+            onHome={goHome}
+            composerSlot={composer("surface")}
+          />
         </section>
       </form>
       )}

@@ -18,6 +18,11 @@ export type ProductSection = {
   products: SearchItem[];
 };
 
+export type RecommendationTimelineItem =
+  | { kind: "user"; text: string }
+  | { kind: "assistant"; text: string }
+  | { kind: "products"; headline: string; products: SearchItem[] };
+
 export function splitProductsIntoSections(products: SearchItem[], headline: string): ProductSection[] {
   if (products.length === 0) return [];
   if (products.length <= 3) {
@@ -53,51 +58,44 @@ function sectionHeadlineFromMessage(text: string): string {
 
 /** Shapes API-style messages into recommendation-first layout (explain → recommend). */
 export function deriveRecommendationLayout(messages: ChatMessageLike[]): {
-  primaryQuery: string;
-  followUpQueries: string[];
-  explanationBlocks: string[];
-  sections: ProductSection[];
+  timeline: RecommendationTimelineItem[];
   lockedPreview: boolean;
   lockedProducts: SearchItem[] | null;
 } {
-  const userTexts = messages.filter((m) => m.role === "user").map((m) => m.text.trim()).filter(Boolean);
-  const primaryQuery = userTexts[0] ?? "";
-  const followUpQueries = userTexts.slice(1);
-
-  const explanationBlocks: string[] = [];
-  const rawProductSections: { headline: string; products: SearchItem[] }[] = [];
+  const timeline: RecommendationTimelineItem[] = [];
   let lockedPreview = false;
   let lockedProducts: SearchItem[] | null = null;
 
   for (const m of messages) {
-    if (m.role !== "assistant") continue;
-    if (m.lockedPreview && m.products && m.products.length > 0) {
-      lockedPreview = true;
-      lockedProducts = m.products;
-      continue;
-    }
-    if (m.products && m.products.length > 0) {
-      rawProductSections.push({
-        headline: sectionHeadlineFromMessage(m.text),
-        products: m.products,
-      });
-      continue;
-    }
-    if (m.text?.trim()) {
-      explanationBlocks.push(m.text.trim());
-    }
-  }
+    const text = m.text?.trim() || "";
 
-  const sections: ProductSection[] = [];
-  for (const block of rawProductSections) {
-    sections.push(...splitProductsIntoSections(block.products, block.headline));
+    if (m.role === "assistant") {
+      if (m.lockedPreview && m.products && m.products.length > 0) {
+        lockedPreview = true;
+        lockedProducts = m.products;
+        continue;
+      }
+      if (m.products && m.products.length > 0) {
+        timeline.push({
+          kind: "products",
+          headline: sectionHeadlineFromMessage(text),
+          products: m.products,
+        });
+        continue;
+      }
+      if (text) {
+        timeline.push({ kind: "assistant", text });
+      }
+      continue;
+    }
+
+    if (m.role === "user" && text) {
+      timeline.push({ kind: "user", text });
+    }
   }
 
   return {
-    primaryQuery,
-    followUpQueries,
-    explanationBlocks,
-    sections,
+    timeline,
     lockedPreview,
     lockedProducts,
   };
@@ -205,10 +203,7 @@ function LockedRecommendationsGate({
 }
 
 export function RecommendationExperience({
-  primaryQuery,
-  followUpQueries,
-  explanationBlocks,
-  sections,
+  timeline,
   lockedPreview,
   lockedProducts,
   loading,
@@ -218,10 +213,7 @@ export function RecommendationExperience({
   onHome,
   composerSlot,
 }: {
-  primaryQuery: string;
-  followUpQueries: string[];
-  explanationBlocks: string[];
-  sections: ProductSection[];
+  timeline: RecommendationTimelineItem[];
   lockedPreview: boolean;
   lockedProducts: SearchItem[] | null;
   loading: boolean;
@@ -232,10 +224,10 @@ export function RecommendationExperience({
   composerSlot: ReactNode;
 }) {
   const showLocked = lockedPreview && lockedProducts && lockedProducts.length > 0 && !isSignedIn;
-  const displaySections =
+  const displayTimeline =
     isSignedIn && lockedProducts && lockedProducts.length > 0 && !showLocked
-      ? splitProductsIntoSections(lockedProducts, "Curated for you")
-      : sections;
+      ? [...timeline, { kind: "products" as const, headline: "Curated for you", products: lockedProducts }]
+      : timeline;
 
   return (
     <div className="rec-surface-root flex min-h-0 flex-1 gap-3 pt-1 sm:gap-5 sm:pt-0">
@@ -254,83 +246,74 @@ export function RecommendationExperience({
 
       <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border border-[rgba(37,35,33,0.12)] bg-[#f1eee8]">
         <div className="relative z-0 min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-8 sm:px-10 sm:py-11 md:px-12 md:py-14">
-          <div className="rec-surface-enter mr-auto ml-0 w-full min-w-0 max-w-[48rem] text-left">
-            {/* 1. Query — strongest anchor */}
-            {primaryQuery ? (
-              <h1 className="font-editorial text-[2.15rem] leading-[0.96] tracking-[-0.04em] text-[#151515] sm:text-[2.9rem] md:text-[3.45rem]">
-                {primaryQuery}
-              </h1>
-            ) : null}
-
-            {followUpQueries.length > 0 ? (
-              <ul className="mt-7 space-y-3 border-l border-[rgba(37,35,33,0.16)] pl-4.5">
-                {followUpQueries.map((q) => (
-                  <li key={q} className="text-[0.9rem] leading-relaxed text-stone-500">
-                    <span className="text-[0.62rem] font-medium uppercase tracking-[0.26em] text-stone-400">Refinement</span>
-                    <span className="mt-1 block text-stone-600">{q}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-
-            {/* 2. Explanation before commerce */}
-            {explanationBlocks.length > 0 ? (
-              <div className="mt-12 space-y-6 sm:mt-14">
-                {explanationBlocks.map((block, i) => (
-                  <p
-                    key={`${i}-${block.slice(0, 24)}`}
-                    className="max-w-2xl text-[0.98rem] leading-[1.9] text-stone-600 sm:text-[1rem]"
-                  >
-                    {block}
-                  </p>
-                ))}
-              </div>
-            ) : null}
-
-            {loading ? (
-              <p
-                className="rec-surface-enter mt-10 max-w-xl text-[0.98rem] leading-relaxed text-stone-500 sm:mt-12"
-                role="status"
-                aria-live="polite"
-              >
-                {loadingMessage?.trim() || "Finding pieces that match your direction..."}
-              </p>
-            ) : null}
-
-            {/* 3. Sections: title → subtitle → row */}
-            {!loading && showLocked && lockedProducts ? (
-              <div className="mt-12 sm:mt-14">
-                <LockedRecommendationsGate products={lockedProducts} onOpenLogin={onOpenLogin} />
-              </div>
-            ) : null}
-
-            {!loading && !showLocked && displaySections.length > 0 ? (
-              <div className="mt-12 space-y-14 sm:mt-16 sm:space-y-18">
-                {displaySections.map((section, sIdx) => (
-                  <section
-                    key={`${section.title}-${sIdx}`}
-                    className="rec-section-enter border-t border-[rgba(37,35,33,0.12)] pt-10 first:border-t-0 first:pt-0 sm:pt-12 first:sm:pt-0"
-                    style={{ animationDelay: `${80 + sIdx * 90}ms` }}
-                  >
-                    <h2 className="text-[0.64rem] font-semibold uppercase tracking-[0.3em] text-stone-500">
-                      {section.title}
-                    </h2>
-                    <p className="mt-2 max-w-xl text-[0.88rem] leading-relaxed text-stone-500">{section.subtitle}</p>
-                    <div
-                      className={`mt-9 grid w-full min-w-0 items-stretch gap-4 pt-1 sm:gap-5 sm:pt-0 ${
-                        section.products.length <= 3
-                          ? "grid-cols-1 sm:grid-cols-3"
-                          : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-                      }`}
-                    >
-                      {section.products.map((item) => (
-                        <SoftProductCard key={item.id} item={item} />
-                      ))}
+          <div className="rec-surface-enter mr-auto ml-0 w-full min-w-0 max-w-[82rem] text-left">
+            <div className="space-y-8">
+              {displayTimeline.map((item, idx) => {
+                if (item.kind === "user") {
+                  return (
+                    <div key={`u-${idx}`} className="flex justify-end">
+                      <div className="max-w-[min(100%,56rem)] border border-[rgba(37,35,33,0.18)] bg-[#e7e3db] px-5 py-4 text-stone-900 sm:px-6">
+                        <p className="text-[0.97rem] leading-[1.7]">{item.text}</p>
+                      </div>
                     </div>
-                  </section>
-                ))}
-              </div>
-            ) : null}
+                  );
+                }
+
+                if (item.kind === "assistant") {
+                  return (
+                    <div key={`a-${idx}`} className="flex justify-start">
+                      <div className="max-w-[min(100%,56rem)] border border-[rgba(37,35,33,0.12)] bg-[#f3f0ea] px-5 py-4 text-stone-800 sm:px-6">
+                        <p className="text-[0.97rem] leading-[1.7]">{item.text}</p>
+                      </div>
+                    </div>
+                  );
+                }
+
+                const sections = splitProductsIntoSections(item.products, item.headline);
+                return (
+                  <div key={`p-${idx}`} className="space-y-10">
+                    {sections.map((section, sIdx) => (
+                      <section
+                        key={`${idx}-${section.title}-${sIdx}`}
+                        className="rec-section-enter border-t border-[rgba(37,35,33,0.12)] pt-10 first:border-t-0 first:pt-0"
+                      >
+                        <h2 className="text-[0.64rem] font-semibold uppercase tracking-[0.3em] text-stone-500">
+                          {section.title}
+                        </h2>
+                        <p className="mt-2 max-w-xl text-[0.88rem] leading-relaxed text-stone-500">{section.subtitle}</p>
+                        <div
+                          className={`mt-9 grid w-full min-w-0 items-stretch gap-4 ${
+                            section.products.length <= 3
+                              ? "grid-cols-1 sm:grid-cols-3"
+                              : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+                          }`}
+                        >
+                          {section.products.map((p) => (
+                            <SoftProductCard key={p.id} item={p} />
+                          ))}
+                        </div>
+                      </section>
+                    ))}
+                  </div>
+                );
+              })}
+
+              {loading ? (
+                <p
+                  className="rec-surface-enter mt-4 max-w-xl text-[0.98rem] leading-relaxed text-stone-500"
+                  role="status"
+                  aria-live="polite"
+                >
+                  {loadingMessage?.trim() || "Finding pieces that match your direction..."}
+                </p>
+              ) : null}
+
+              {!loading && showLocked && lockedProducts ? (
+                <div className="pt-2">
+                  <LockedRecommendationsGate products={lockedProducts} onOpenLogin={onOpenLogin} />
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
 

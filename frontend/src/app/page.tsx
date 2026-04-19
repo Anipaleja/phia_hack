@@ -759,11 +759,14 @@ export default function Home() {
         budgetTier: "all",
         includeHistory: true,
       });
+      const explanation =
+        response.summary?.trim() ||
+        "Here’s a set of pieces aligned with your prompt—review images and titles before buying.";
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          text: "I prioritized pieces that preserve the East Coast tailored ease, then balanced them for versatility and price coherence.",
+          text: explanation,
         },
         {
           role: "assistant",

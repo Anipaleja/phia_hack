@@ -137,6 +137,8 @@ export type SearchItem = {
 
 export type SearchResponse = {
   items: SearchItem[];
+  /** Human-readable explanation from the backend (curated celebrity vs scraped, etc.) */
+  summary?: string;
   meta: {
     query: string;
     total: number;
@@ -189,14 +191,13 @@ type BackendPricePoint = {
 };
 
 type GenerateOutfitResponse = {
+  prompt: string;
+  summary: string;
   variants: BackendOutfitItem[];
   outfit?: BackendOutfitItem[];
-  summary: {
-    totalItems: number;
-    averagePrice: unknown;
-    prompt: string;
-  };
-  created_at: string;
+  recommendations?: { label: string; items: string[] };
+  cached?: boolean;
+  created_at?: string;
 };
 
 function getStoredToken(): string | null {
@@ -416,6 +417,7 @@ export async function searchOutfit(
 
   return {
     items,
+    summary: outfitResponse.summary,
     meta: {
       query: prompt,
       total: items.length,

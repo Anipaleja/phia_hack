@@ -47,6 +47,16 @@ const STYLE_CHAT_FORM_ID = "style-chat-form";
 
 const CHAT_HISTORY_KEY = "closer_chat_history_v1";
 const MAX_SAVED_SESSIONS = 30;
+const MIN_LOADING_MS = 5000;
+
+const FUNNY_LOADING_LINES = [
+  "Asking a very opinionated mannequin for final approval...",
+  "Steam-pressing pixels so this fit lands crisp...",
+  "Cross-checking vibes against the laws of tailoring...",
+  "Trying on 47 outfits in another tab. Brb...",
+  "Making sure this doesn't look like your ex's Pinterest board...",
+  "Summoning the style committee and muting their group chat...",
+];
 
 const EXAMPLE_PRODUCTS: SearchItem[] = [
   {
@@ -365,6 +375,7 @@ export default function Home() {
   const [basePrompt, setBasePrompt] = useState("");
   const [awaitingFollowUp, setAwaitingFollowUp] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingLine, setLoadingLine] = useState(FUNNY_LOADING_LINES[0]);
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
   const [authFullName, setAuthFullName] = useState("");
@@ -379,6 +390,7 @@ export default function Home() {
   const followUpThreadScrollRef = useRef<HTMLDivElement | null>(null);
   const [landingComposerFocused, setLandingComposerFocused] = useState(false);
   const [clientMounted, setClientMounted] = useState(false);
+  const loadingTickerRef = useRef<number | null>(null);
 
   const hasConversationStarted = messages.some((message) => message.role === "user");
   /** Center composer only for the very first prompt on landing (never on follow-ups). */
@@ -401,6 +413,14 @@ export default function Home() {
 
   useEffect(() => {
     setClientMounted(true);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (loadingTickerRef.current !== null) {
+        window.clearInterval(loadingTickerRef.current);
+      }
+    };
   }, []);
 
   useLayoutEffect(() => {
@@ -440,7 +460,38 @@ export default function Home() {
     setAwaitingFollowUp(false);
     setInput("");
     setLoading(false);
+    if (loadingTickerRef.current !== null) {
+      window.clearInterval(loadingTickerRef.current);
+      loadingTickerRef.current = null;
+    }
     setLandingComposerFocused(false);
+  }
+
+  function startLoadingTicker() {
+    if (loadingTickerRef.current !== null) {
+      window.clearInterval(loadingTickerRef.current);
+      loadingTickerRef.current = null;
+    }
+
+    const shuffled = [...FUNNY_LOADING_LINES].sort(() => Math.random() - 0.5);
+    let idx = 0;
+    setLoadingLine(shuffled[idx]);
+
+    loadingTickerRef.current = window.setInterval(() => {
+      idx = (idx + 1) % shuffled.length;
+      setLoadingLine(shuffled[idx]);
+    }, 1150);
+  }
+
+  async function ensureMinimumLoadingTime(startedAtMs: number) {
+    const elapsed = Date.now() - startedAtMs;
+    if (elapsed >= MIN_LOADING_MS) {
+      return;
+    }
+
+    await new Promise((resolve) => {
+      window.setTimeout(resolve, MIN_LOADING_MS - elapsed);
+    });
   }
 
   function restoreSession(session: SavedChatSession) {
@@ -531,8 +582,9 @@ export default function Home() {
   }
 
   async function runSearchWithFollowUp(combinedPrompt: string) {
-
+    const startedAtMs = Date.now();
     setLoading(true);
+    startLoadingTicker();
     try {
       if (!getAccessToken()) {
         setMessages((prev) => [
@@ -543,7 +595,6 @@ export default function Home() {
           },
         ]);
         setAuthPanel("login");
-        setLoading(false);
         return;
       }
 
@@ -572,8 +623,14 @@ export default function Home() {
           text: `Could not load live results (${message}). Please try a more specific prompt.`,
         },
       ]);
+    } finally {
+      await ensureMinimumLoadingTime(startedAtMs);
+      if (loadingTickerRef.current !== null) {
+        window.clearInterval(loadingTickerRef.current);
+        loadingTickerRef.current = null;
+      }
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -959,7 +1016,7 @@ export default function Home() {
                   ))}
                   {loading && (
                     <div className="max-w-3xl border border-[rgba(37,35,33,0.12)] bg-[#f3f0ea] px-6 py-4 text-[0.9rem] text-stone-600">
-                      Looking for additional pieces using your latest direction...
+                      {loadingLine}
                     </div>
                   )}
                 </div>
@@ -977,6 +1034,7 @@ export default function Home() {
               lockedPreview={recLayout.lockedPreview}
               lockedProducts={recLayout.lockedProducts}
               loading={loading}
+              loadingMessage={loadingLine}
               isSignedIn={Boolean(token)}
               onOpenLogin={() => {
                 setAuthPanel("login");

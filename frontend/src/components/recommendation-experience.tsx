@@ -196,6 +196,7 @@ export function RecommendationExperience({
   lockedPreview,
   lockedProducts,
   loading,
+  loadingMessage,
   isSignedIn,
   onOpenLogin,
   onHome,
@@ -208,6 +209,7 @@ export function RecommendationExperience({
   lockedPreview: boolean;
   lockedProducts: SearchItem[] | null;
   loading: boolean;
+  loadingMessage?: string;
   isSignedIn: boolean;
   onOpenLogin: () => void;
   onHome: () => void;
@@ -275,7 +277,7 @@ export function RecommendationExperience({
                 role="status"
                 aria-live="polite"
               >
-                Finding pieces that match your direction…
+                {loadingMessage?.trim() || "Finding pieces that match your direction..."}
               </p>
             ) : null}
 

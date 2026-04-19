@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { ProductTileImage } from "@/components/product-tile-image";
+import { ProductTrendButton } from "@/components/product-trend-button";
 import type { SearchItem } from "@/lib/api";
 
 export type ChatMessageLike = {
@@ -118,29 +119,38 @@ function IconHome({ className }: { className?: string }) {
 function SoftProductCard({ item }: { item: SearchItem }) {
   return (
     <article className="group rec-card-enter flex h-full min-h-0 min-w-0 w-full max-w-full flex-col">
-      <a
-        href={item.productUrl}
-        target="_blank"
-        rel="noreferrer"
-        className="flex h-full min-h-0 flex-col overflow-hidden border border-[rgba(37,35,33,0.12)] bg-[#f3f0ea] transition-[transform,border-color,background-color] duration-300 ease-out hover:border-[rgba(37,35,33,0.24)] hover:bg-[#eeebe4]"
-      >
-        <div className="shrink-0">
-          <ProductTileImage
-            src={item.imageUrl}
-            alt={item.title}
-            foregroundClassName="transition-transform duration-500 ease-out group-hover:scale-[1.015]"
+      <div className="flex h-full min-h-0 flex-col overflow-hidden border border-[rgba(37,35,33,0.12)] bg-[#f3f0ea] transition-[transform,border-color,background-color] duration-300 ease-out hover:border-[rgba(37,35,33,0.24)] hover:bg-[#eeebe4]">
+        <a
+          href={item.productUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="flex h-full min-h-0 flex-1 flex-col overflow-hidden"
+        >
+          <div className="shrink-0">
+            <ProductTileImage
+              src={item.imageUrl}
+              alt={item.title}
+              foregroundClassName="transition-transform duration-500 ease-out group-hover:scale-[1.015]"
+            />
+          </div>
+          <div className="flex min-h-0 flex-1 flex-col space-y-1.5 px-3.5 pb-4 pt-3.5">
+            <p className="text-[0.62rem] font-medium uppercase tracking-[0.22em] text-stone-400">{item.store}</p>
+            <h3 className="font-editorial text-[1.05rem] leading-[1.08] tracking-[-0.02em] text-stone-900">
+              {item.title}
+            </h3>
+            <p className="mt-auto text-[0.78rem] tabular-nums text-stone-500">
+              {item.price > 0 ? `${item.currency} ${item.price}` : "See listing for price"}
+            </p>
+          </div>
+        </a>
+
+        <div className="border-t border-[rgba(37,35,33,0.1)] bg-[#ece8e0] px-3 py-2.5">
+          <ProductTrendButton
+            item={item}
+            buttonClassName="w-full border border-[rgba(37,35,33,0.2)] bg-[#f3efe8] px-3 py-2 text-[10px] uppercase tracking-[0.14em] text-stone-700 transition hover:border-[rgba(37,35,33,0.32)] hover:text-stone-900"
           />
         </div>
-        <div className="flex min-h-0 flex-1 flex-col space-y-1.5 px-3.5 pb-4 pt-3.5">
-          <p className="text-[0.62rem] font-medium uppercase tracking-[0.22em] text-stone-400">{item.store}</p>
-          <h3 className="font-editorial text-[1.05rem] leading-[1.08] tracking-[-0.02em] text-stone-900">
-            {item.title}
-          </h3>
-          <p className="mt-auto text-[0.78rem] tabular-nums text-stone-500">
-            {item.price > 0 ? `${item.currency} ${item.price}` : "See listing for price"}
-          </p>
-        </div>
-      </a>
+      </div>
     </article>
   );
 }

@@ -145,6 +145,45 @@ export type SearchResponse = {
   };
 };
 
+export type ProductTrendSourceKey = "closer_listing" | "python_scraper" | "productscrapes";
+
+export type ProductTrendObservation = {
+  timestamp: string;
+  price: number;
+  currency: string;
+  retailer: string;
+  source: ProductTrendSourceKey;
+  productUrl: string;
+};
+
+export type ProductTrendMarketPoint = {
+  label: string;
+  price: number;
+  currency: string;
+  retailer: string;
+  productUrl: string;
+};
+
+export type ProductTrendSourceInfo = {
+  key: ProductTrendSourceKey;
+  label: string;
+  description: string;
+  used: boolean;
+};
+
+export type ProductTrendResponse = {
+  productUrl: string;
+  observations: ProductTrendObservation[];
+  marketScan: ProductTrendMarketPoint[];
+  seriesMode: "observed_history" | "market_scan_fallback";
+  historyLooksFlat: boolean;
+  latestPrice: number | null;
+  currency: string;
+  updatedAt: string;
+  note: string;
+  sources: ProductTrendSourceInfo[];
+};
+
 export type CelebrityLookalikeMatch = {
   celebrity: string;
   confidence: number;
@@ -460,6 +499,43 @@ export async function findCelebrityLookalike(
   }
 
   return data as CelebrityLookalikeResponse;
+}
+
+/**
+ * POST /api/outfits/trend
+ * Returns real observed product price points with source attribution.
+ */
+export async function getProductTrend(item: SearchItem): Promise<ProductTrendResponse> {
+  const token = getStoredToken();
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetchJsonOrThrow(apiUrl("/api/outfits/trend"), {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      productUrl: item.productUrl,
+      title: item.title,
+      store: item.store,
+      currentPrice: item.price,
+      currency: item.currency,
+    }),
+  });
+
+  const data = (await parseJsonSafe(response)) as
+    | ProductTrendResponse
+    | { error?: { message?: string; code?: string } };
+
+  if (!response.ok) {
+    throw new Error(extractApiErrorMessage(data, response));
+  }
+
+  return data as ProductTrendResponse;
 }
 
 /** @deprecated Use searchOutfit + mapOutfitToSearchItems — kept for older imports */

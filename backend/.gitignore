@@ -36,6 +36,7 @@ coverage/
 .npm
 .eslintcache
 .node-cache
+data/runtime/
 
 # OS
 Thumbs.db

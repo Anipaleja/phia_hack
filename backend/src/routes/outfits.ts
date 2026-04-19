@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { authMiddleware, optionalAuthMiddleware } from "../middleware/auth";
-import { lookalikeLimiter, searchLimiter } from "../middleware/rateLimiter";
+import { lookalikeLimiter, searchLimiter, trendLimiter } from "../middleware/rateLimiter";
 import { handleError } from "../utils/errorHandler";
 import logger from "../utils/logger";
 import ShoppingAgentService from "../services/shoppingAgentService";
@@ -8,6 +8,8 @@ import AIService from "../services/aiService";
 import AnalyticsService from "../services/analyticsService";
 import ShareService from "../services/shareService";
 import CelebrityLookalikeService from "../services/celebrityLookalikeService";
+import PriceService from "../services/priceService";
+import ProductTrendService, { ProductTrendSource } from "../services/productTrendService";
 import { supabaseClient } from "../config/supabase";
 import {
   GenerateStylesRequest,
@@ -18,6 +20,65 @@ import {
 } from "../types";
 
 const router = Router();
+
+type ProductTrendRequest = {
+  productUrl?: string;
+  title?: string;
+  store?: string;
+  currentPrice?: number;
+  currency?: string;
+};
+
+type ProductTrendMarketPoint = {
+  label: string;
+  price: number;
+  currency: string;
+  retailer: string;
+  productUrl: string;
+};
+
+function getPriceRange(values: number[]): number {
+  if (values.length < 2) {
+    return 0;
+  }
+
+  return Math.max(...values) - Math.min(...values);
+}
+
+function compactRetailerLabel(retailer: string, index: number): string {
+  const base = retailer.replace(/^www\./, "").split(".")[0] || "shop";
+  return `${base.slice(0, 10)}-${index + 1}`;
+}
+
+const trendSourceCatalog: Array<{
+  key: ProductTrendSource;
+  label: string;
+  description: string;
+}> = [
+  {
+    key: "closer_listing",
+    label: "Closer live listing snapshot",
+    description: "Price captured from the product card shown in your outfit results.",
+  },
+  {
+    key: "python_scraper",
+    label: "Product page scrape (Playwright)",
+    description: "Live extraction from the product URL using our Python Playwright scraper.",
+  },
+  {
+    key: "productscrapes",
+    label: "ProductScrapes API",
+    description: "Live product payload fetched through ProductScrapes when available.",
+  },
+];
+
+function getRetailerFromUrl(value: string): string {
+  try {
+    return new URL(value).hostname.replace(/^www\./, "");
+  } catch {
+    return "shop";
+  }
+}
 
 /**
  * AI & Shopping Agent Routes
@@ -183,6 +244,134 @@ router.post(
       const result = await CelebrityLookalikeService.findClosestCelebrity(imageDataUrl, gender);
 
       return res.status(200).json(result);
+    } catch (error) {
+      return handleError(error as Error, res);
+    }
+  }
+);
+
+/**
+ * POST /outfits/trend
+ * Returns real observed price history for a product URL with source attribution.
+ */
+router.post(
+  "/trend",
+  optionalAuthMiddleware,
+  trendLimiter,
+  async (req: Request, res: Response) => {
+    try {
+      const {
+        productUrl: rawProductUrl,
+        title: rawTitle,
+        store: rawStore,
+        currentPrice,
+        currency: rawCurrency,
+      } = req.body as ProductTrendRequest;
+
+      const productUrl = typeof rawProductUrl === "string" ? rawProductUrl.trim() : "";
+
+      if (!productUrl) {
+        return res.status(400).json({
+          error: {
+            code: "MISSING_PRODUCT_URL",
+            message: "productUrl is required",
+          },
+        });
+      }
+
+      const normalizedProductUrl = ProductTrendService.normalizeProductUrl(productUrl);
+      if (!normalizedProductUrl) {
+        return res.status(400).json({
+          error: {
+            code: "INVALID_PRODUCT_URL",
+            message: "productUrl must be a valid http(s) URL",
+          },
+        });
+      }
+
+      const currency =
+        typeof rawCurrency === "string" && rawCurrency.trim()
+          ? rawCurrency.trim().toUpperCase()
+          : "USD";
+      const title = typeof rawTitle === "string" ? rawTitle.trim() : "";
+      const store =
+        typeof rawStore === "string" && rawStore.trim()
+          ? rawStore.trim()
+          : getRetailerFromUrl(normalizedProductUrl);
+
+      if (Number.isFinite(currentPrice) && Number(currentPrice) > 0) {
+        ProductTrendService.appendObservation(normalizedProductUrl, {
+          timestamp: new Date().toISOString(),
+          price: Number(currentPrice),
+          currency,
+          retailer: store,
+          source: "closer_listing",
+          productUrl: normalizedProductUrl,
+        });
+      }
+
+      const liveSnapshot = await PriceService.getLivePriceForProductUrl(normalizedProductUrl);
+      if (liveSnapshot) {
+        ProductTrendService.appendObservation(normalizedProductUrl, {
+          timestamp: liveSnapshot.fetchedAt,
+          price: liveSnapshot.price,
+          currency: liveSnapshot.currency || currency,
+          retailer: liveSnapshot.retailer || store,
+          source: liveSnapshot.source,
+          productUrl: normalizedProductUrl,
+        });
+      }
+
+      const observations = ProductTrendService.listObservations(normalizedProductUrl).slice(-24);
+      const usedSources = new Set(observations.map((point) => point.source));
+      const latestObservation = observations[observations.length - 1] || null;
+      const observedRange = getPriceRange(observations.map((point) => point.price));
+      const historyLooksFlat = observations.length < 2 || observedRange < 0.5;
+
+      let marketScan: ProductTrendMarketPoint[] = [];
+      if (title && (historyLooksFlat || observations.length < 4)) {
+        try {
+          const scanResult = await PriceService.getPricesForItem(title, store, "");
+          marketScan = scanResult.pricePoints.slice(0, 8).map((point, index) => ({
+            label: compactRetailerLabel(point.retailer || "shop", index),
+            price: point.price,
+            currency: point.currency || currency,
+            retailer: point.retailer || "shop",
+            productUrl: point.productUrl,
+          }));
+        } catch (error) {
+          logger.debug("Trend market scan unavailable", {
+            productUrl: normalizedProductUrl,
+            title,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+      }
+
+      const marketRange = getPriceRange(marketScan.map((point) => point.price));
+      const marketHasVariance = marketScan.length >= 2 && marketRange >= 0.5;
+      const seriesMode = historyLooksFlat && marketHasVariance
+        ? "market_scan_fallback"
+        : "observed_history";
+
+      return res.status(200).json({
+        productUrl: normalizedProductUrl,
+        observations,
+        marketScan,
+        seriesMode,
+        historyLooksFlat,
+        latestPrice: latestObservation?.price ?? null,
+        currency: latestObservation?.currency || currency,
+        updatedAt: new Date().toISOString(),
+        note:
+          seriesMode === "market_scan_fallback"
+            ? "History is currently flat, so the chart is using a live market scan of comparable listings from real retailer pages."
+            : "Trend values are based only on real captured listing prices. No synthetic interpolation is used.",
+        sources: trendSourceCatalog.map((source) => ({
+          ...source,
+          used: usedSources.has(source.key),
+        })),
+      });
     } catch (error) {
       return handleError(error as Error, res);
     }

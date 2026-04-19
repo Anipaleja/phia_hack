@@ -2,6 +2,7 @@
 
 import { ChangeEvent, FormEvent, MouseEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ProductTileImage } from "@/components/product-tile-image";
+import { ProductTrendButton } from "@/components/product-trend-button";
 import { deriveRecommendationLayout, RecommendationExperience } from "@/components/recommendation-experience";
 import { createPortal } from "react-dom";
 import {
@@ -337,20 +338,26 @@ function MessageBubble({
                     {item.reason ? (
                       <p className="flex-1 text-[0.86rem] leading-[1.5] text-stone-600">{item.reason}</p>
                     ) : null}
-                    {item.productUrl ? (
-                      <a
-                        href={item.productUrl}
-                        className="mt-auto inline-block pt-1 text-[10px] uppercase tracking-[0.14em] text-stone-900 transition-opacity duration-200 hover:opacity-70"
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        Open product page
-                      </a>
-                    ) : (
-                      <p className="mt-auto pt-1 text-[10px] uppercase tracking-[0.14em] text-stone-500">
-                        Live product link unavailable
-                      </p>
-                    )}
+                    <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
+                      {item.productUrl ? (
+                        <a
+                          href={item.productUrl}
+                          className="inline-block text-[10px] uppercase tracking-[0.14em] text-stone-900 transition-opacity duration-200 hover:opacity-70"
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Open product page
+                        </a>
+                      ) : (
+                        <p className="text-[10px] uppercase tracking-[0.14em] text-stone-500">
+                          Live product link unavailable
+                        </p>
+                      )}
+                      <ProductTrendButton
+                        item={item}
+                        buttonClassName="border border-[rgba(37,35,33,0.2)] bg-[#ece8e0] px-2.5 py-1.5 text-[10px] uppercase tracking-[0.14em] text-stone-700 transition hover:border-[rgba(37,35,33,0.32)] hover:text-stone-900"
+                      />
+                    </div>
                   </div>
                 </article>
               ))}

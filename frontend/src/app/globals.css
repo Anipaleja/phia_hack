@@ -239,3 +239,83 @@ body {
     animation: rec-section-fade 0.72s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 }
+
+@keyframes trend-panel-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes trend-line-draw-kf {
+  from {
+    stroke-dashoffset: var(--trend-length, 1200);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes trend-dot-pop-kf {
+  0% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes trend-grid-fade-kf {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .trend-panel-enter {
+    animation: trend-panel-rise 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .trend-line-draw {
+    stroke-dasharray: var(--trend-length, 1200);
+    stroke-dashoffset: var(--trend-length, 1200);
+    animation: trend-line-draw-kf var(--trend-duration, 1.25s)
+      cubic-bezier(0.2, 0.8, 0.25, 1)
+      var(--trend-delay, 0s)
+      forwards;
+  }
+
+  .trend-dot-pop {
+    opacity: 0;
+    transform-origin: center;
+    animation: trend-dot-pop-kf 0.42s ease-out var(--trend-delay, 0.75s) forwards;
+  }
+
+  .trend-grid-fade {
+    animation: trend-grid-fade-kf 0.45s ease-out 0.08s both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trend-panel-enter,
+  .trend-line-draw,
+  .trend-dot-pop,
+  .trend-grid-fade {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

@@ -27,6 +27,13 @@ type ScrapedProductRecord = {
   retailer?: string;
 };
 
+export type LivePriceSnapshotSource = "python_scraper" | "productscrapes";
+
+export type LivePriceSnapshot = PricePoint & {
+  source: LivePriceSnapshotSource;
+  fetchedAt: string;
+};
+
 type LaunchStrategy = {
   name: string;
   options: Record<string, unknown>;
@@ -772,6 +779,46 @@ export class PriceService {
     return Number.isFinite(configuredTimeout)
       ? Math.max(configuredTimeout, 60000)
       : 60000;
+  }
+
+  /**
+   * Fetch a live price snapshot for a single product URL with source attribution.
+   */
+  static async getLivePriceForProductUrl(productUrl: string): Promise<LivePriceSnapshot | null> {
+    if (!PriceService.isHttpUrl(productUrl) || !PriceService.isLikelyShoppableProductUrl(productUrl)) {
+      return null;
+    }
+
+    try {
+      const pythonResult = await PriceService.fetchPythonScrapedProductData(productUrl);
+      const pythonPoint = PriceService.toCompletePricePoint(pythonResult);
+      if (pythonPoint) {
+        return {
+          ...pythonPoint,
+          source: "python_scraper",
+          fetchedAt: new Date().toISOString(),
+        };
+      }
+
+      if (!productScrapesDisabled) {
+        const productscrapesResult = await PriceService.fetchProductScrapesProductData(productUrl);
+        const productscrapesPoint = PriceService.toCompletePricePoint(productscrapesResult);
+        if (productscrapesPoint) {
+          return {
+            ...productscrapesPoint,
+            source: "productscrapes",
+            fetchedAt: new Date().toISOString(),
+          };
+        }
+      }
+    } catch (error) {
+      logger.debug("Live product snapshot fetch failed", {
+        productUrl,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+
+    return null;
   }
 
   private static getBaseLaunchOptions() {

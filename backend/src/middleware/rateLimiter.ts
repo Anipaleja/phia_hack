@@ -157,3 +157,33 @@ export const lookalikeLimiter = rateLimit({
     });
   },
 });
+
+/**
+ * Product trend endpoint limiter - 30 requests per hour per user/IP
+ * SECURITY: Trend endpoint may trigger live product page scraping.
+ */
+export const trendLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req: any) => {
+    if (req.user?.id) {
+      return `trend:user:${req.user.id}`;
+    }
+    return `trend:ip:${req.ip}`;
+  },
+  handler: (req: any, res: any) => {
+    logger.warn("Trend rate limit exceeded", {
+      userId: req.user?.id,
+      ip: req.ip,
+    });
+
+    return res.status(429).json({
+      error: {
+        code: "TREND_RATE_LIMIT_EXCEEDED",
+        message: "Too many trend requests. Please try again later.",
+      },
+    });
+  },
+});

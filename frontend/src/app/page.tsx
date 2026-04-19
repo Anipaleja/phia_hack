@@ -1102,7 +1102,7 @@ export default function Home() {
               Who do I look like most?
             </h1>
             <p className="mt-4 max-w-2xl text-[0.94rem] leading-[1.65] text-stone-600">
-              Upload a clear selfie and we will match you to the closest celebrity icon from our roster.
+              Upload a clear full-body photo and we will match you to the closest celebrity icon from our roster.
             </p>
 
             <div className="mt-7 grid gap-6 md:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
@@ -1145,6 +1145,9 @@ export default function Home() {
                 </button>
 
                 <p className="mt-3 text-[0.78rem] text-stone-500">JPG, PNG, WEBP up to 5MB</p>
+                <p className="mt-1 text-[0.78rem] text-stone-500">
+                  Full-body framing required: head-to-toe preferred, shoulders to below knees minimum.
+                </p>
                 {!lookalikeGender ? (
                   <p className="mt-1 text-[0.78rem] text-stone-500">Pick a gender to enable upload and matching.</p>
                 ) : null}
@@ -1156,7 +1159,7 @@ export default function Home() {
                   </div>
                 ) : (
                   <div className="mt-4 flex h-80 items-center justify-center border border-[rgba(37,35,33,0.12)] bg-[#e6e0d6] px-6 text-center text-[0.86rem] text-stone-500">
-                    Add your photo to start matching.
+                    Add your full-body photo to start matching.
                   </div>
                 )}
 

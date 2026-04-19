@@ -13,9 +13,11 @@ type ParsedImageData = {
 };
 
 type ModelResult = {
-  closestCelebrity: string;
+  fullBodyVisible: boolean;
+  closestCelebrity: string | null;
   confidence: number;
   topMatches: Array<{ celebrity: string; confidence: number }>;
+  reason?: string;
 };
 
 export type LookalikeGender = "male" | "female";
@@ -245,17 +247,21 @@ Rules:
 2. Return strict JSON only (no markdown).
 3. Confidence must be 0.0 to 1.0.
 4. Include exactly 3 entries in topMatches, sorted by confidence descending.
-5. This is for fun style resemblance only, not identity verification.
+5. FULL-BODY CHECK FIRST: If the photo does not clearly show full body proportions (preferably head-to-toe, minimum shoulders to below knees), set fullBodyVisible=false and do NOT guess a match.
+6. For matching, prioritize body type, proportions, height cues, shoulder/waist/hip relation, posture, and silhouette. Use face only as a minor tiebreaker.
+7. This is for fun style resemblance only, not identity verification.
 
 Return exactly:
 {
-  "closestCelebrity": "<approved name>",
+  "fullBodyVisible": true,
+  "closestCelebrity": "<approved name or NONE>",
   "confidence": 0.0,
   "topMatches": [
     { "celebrity": "<approved name>", "confidence": 0.0 },
     { "celebrity": "<approved name>", "confidence": 0.0 },
     { "celebrity": "<approved name>", "confidence": 0.0 }
-  ]
+  ],
+  "reason": "<short reason or FULL_BODY_NOT_VISIBLE>"
 }`;
   }
 
@@ -266,9 +272,11 @@ Return exactly:
     }
 
     let parsed: {
+      fullBodyVisible?: unknown;
       closestCelebrity?: unknown;
       confidence?: unknown;
       topMatches?: Array<{ celebrity?: unknown; confidence?: unknown }>;
+      reason?: unknown;
     };
 
     try {
@@ -294,6 +302,21 @@ Return exactly:
 
       return allowedByNormalized.get(normalized) || null;
     };
+
+    const fullBodyVisible = parsed.fullBodyVisible === false ? false : true;
+
+    if (!fullBodyVisible) {
+      return {
+        fullBodyVisible: false,
+        closestCelebrity: null,
+        confidence: 0,
+        topMatches: [],
+        reason:
+          typeof parsed.reason === "string" && parsed.reason.trim()
+            ? parsed.reason.trim()
+            : "FULL_BODY_NOT_VISIBLE",
+      };
+    }
 
     const closestCelebrity = normalizeToAllowed(parsed.closestCelebrity);
     if (!closestCelebrity) {
@@ -334,9 +357,11 @@ Return exactly:
       .slice(0, 3);
 
     return {
+      fullBodyVisible: true,
       closestCelebrity,
       confidence: CelebrityLookalikeService.clampConfidence(parsed.confidence),
       topMatches: normalizedTopMatches,
+      reason: typeof parsed.reason === "string" ? parsed.reason.trim() : undefined,
     };
   }
 
@@ -457,10 +482,31 @@ Return exactly:
     );
 
     if (geminiResult) {
+      if (!geminiResult.fullBodyVisible) {
+        throw new AppError(
+          "Please upload a full-body photo (head-to-toe, or at least shoulders to below knees) so body type can be assessed.",
+          "FULL_BODY_REQUIRED",
+          422,
+          { reason: geminiResult.reason || "FULL_BODY_NOT_VISIBLE" }
+        );
+      }
+
+      if (!geminiResult.closestCelebrity) {
+        throw new AppError(
+          "Could not determine a reliable lookalike match from this image.",
+          "LOOKALIKE_AMBIGUOUS",
+          422
+        );
+      }
+
+      const closestCelebrity = geminiResult.closestCelebrity;
+
       return {
-        ...geminiResult,
+        closestCelebrity,
+        confidence: geminiResult.confidence,
+        topMatches: geminiResult.topMatches,
         provider: "gemini",
-        note: "For fun only: visual resemblance is subjective and not identity verification.",
+        note: "For fun only: resemblance is based primarily on full-body proportions/silhouette and is not identity verification.",
       };
     }
 
@@ -471,10 +517,31 @@ Return exactly:
     );
 
     if (openaiResult) {
+      if (!openaiResult.fullBodyVisible) {
+        throw new AppError(
+          "Please upload a full-body photo (head-to-toe, or at least shoulders to below knees) so body type can be assessed.",
+          "FULL_BODY_REQUIRED",
+          422,
+          { reason: openaiResult.reason || "FULL_BODY_NOT_VISIBLE" }
+        );
+      }
+
+      if (!openaiResult.closestCelebrity) {
+        throw new AppError(
+          "Could not determine a reliable lookalike match from this image.",
+          "LOOKALIKE_AMBIGUOUS",
+          422
+        );
+      }
+
+      const closestCelebrity = openaiResult.closestCelebrity;
+
       return {
-        ...openaiResult,
+        closestCelebrity,
+        confidence: openaiResult.confidence,
+        topMatches: openaiResult.topMatches,
         provider: "openai",
-        note: "For fun only: visual resemblance is subjective and not identity verification.",
+        note: "For fun only: resemblance is based primarily on full-body proportions/silhouette and is not identity verification.",
       };
     }
 

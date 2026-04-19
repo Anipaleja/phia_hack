@@ -11,7 +11,7 @@
     "material": "cotton",
     "productUrl": "https://www.nordstrom.com/s/amaryllis-off-the-shoulder-sweater/8087675?",
     "price": 24,
-    "imageUrl": "https://images.unsplash.com/photo-1552902865-b72c031ac5ea?auto=format&fit=crop&w=1200&q=80"
+    "imageUrl": "https://n.nordstrommedia.com/it/45f55df4-afe5-4ed6-be56-0de1bd1dfec6.jpeg?trim=color&w=350&h=536"
   },
   "article2": {
     "name": "Low-Rise Cargo Pant",
@@ -20,7 +20,7 @@
     "material": "cotton twill",
     "productUrl": "https://www.haaladenim.com/collections/womens-jeans/products/bella-trouser",
     "price": 89,
-    "imageUrl": "https://images.unsplash.com/photo-1604176424472-17cd740f74e9?auto=format&fit=crop&w=1200&q=80"
+    "imageUrl": "https://www.haaladenim.com/cdn/shop/files/Web_7_d2584035-ec7d-4edf-abe6-eba037dadfd8_700x.jpg?v=1764807523"
   },
   "article3": {
     "name": "Narrow Oval Sunglasses",
@@ -29,6 +29,6 @@
     "material": "acetate",
     "productUrl": "https://langstore.co/products/bonnie-clyde-boyfriend-2-sunglasses?",
     "price": 320,
-    "imageUrl": "https://images.unsplash.com/photo-1577803645773-f96470509666?auto=format&fit=crop&w=1200&q=80"
+    "imageUrl": "https://langstore.co/cdn/shop/files/250414_LANG_BonnieClyde2047.jpg?v=1745953734&width=1920"
   }
 }

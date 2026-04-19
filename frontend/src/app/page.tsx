@@ -58,6 +58,29 @@ const FUNNY_LOADING_LINES = [
   "Summoning the style committee and muting their group chat...",
 ];
 
+const PRESET_PROMPT_BUTTONS = [
+  {
+    label: "Old money date night",
+    prompt: "Old money date-night look under $300 with one statement piece.",
+  },
+  {
+    label: "Rihanna x Zendaya mix",
+    prompt: "Mix Rihanna and Zendaya style for a clean night-out outfit.",
+  },
+  {
+    label: "Office but cool",
+    prompt: "Modern office outfit that still feels cool and not too corporate.",
+  },
+  {
+    label: "Quiet luxury weekend",
+    prompt: "Quiet luxury weekend capsule in neutral tones, minimal logos.",
+  },
+  {
+    label: "Streetwear refresh",
+    prompt: "Streetwear refresh with strong sneakers and layered textures.",
+  },
+];
+
 const EXAMPLE_PRODUCTS: SearchItem[] = [
   {
     id: "example-shirt-1",
@@ -581,6 +604,28 @@ export default function Home() {
     setToken(null);
   }
 
+  function applyPresetPrompt(prompt: string) {
+    if (loading) {
+      return;
+    }
+
+    setInput(prompt);
+    if (!hasConversationStarted) {
+      setLandingComposerFocused(true);
+      window.requestAnimationFrame(() => {
+        const ta = landingComposerRef.current;
+        if (!ta) return;
+        ta.focus();
+        const len = ta.value.length;
+        try {
+          ta.setSelectionRange(len, len);
+        } catch {
+          // selection not supported for this input type in some environments
+        }
+      });
+    }
+  }
+
   async function runSearchWithFollowUp(combinedPrompt: string) {
     const startedAtMs = Date.now();
     setLoading(true);
@@ -712,6 +757,28 @@ export default function Home() {
                 Send
               </button>
             </div>
+          </div>
+
+          <div className={`mt-3 flex flex-wrap gap-2 ${isLanding ? "sm:mt-3.5" : "sm:mt-3"}`}>
+            {PRESET_PROMPT_BUTTONS.map((preset) => (
+              <button
+                key={preset.label}
+                type="button"
+                disabled={loading}
+                onClick={() => applyPresetPrompt(preset.prompt)}
+                onMouseDown={(event) => {
+                  if (isLanding) event.preventDefault();
+                }}
+                className={
+                  isLanding
+                    ? "border border-[rgba(37,35,33,0.18)] bg-[#ece8e0] px-3 py-1.5 text-[10px] uppercase tracking-[0.13em] text-stone-700 transition hover:border-[rgba(37,35,33,0.3)] hover:bg-[#e7e2da] disabled:cursor-not-allowed disabled:opacity-45"
+                    : "border border-[rgba(37,35,33,0.14)] bg-[#efebe3] px-2.5 py-1.5 text-[10px] uppercase tracking-[0.12em] text-stone-600 transition hover:border-[rgba(37,35,33,0.26)] hover:text-stone-800 disabled:cursor-not-allowed disabled:opacity-40"
+                }
+                aria-label={`Use preset prompt: ${preset.label}`}
+              >
+                {preset.label}
+              </button>
+            ))}
           </div>
         </div>
       </div>

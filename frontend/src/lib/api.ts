@@ -156,6 +156,8 @@ export type CelebrityLookalikeResponse = {
   note: string;
 };
 
+export type LookalikeGender = "male" | "female";
+
 /** Backend GET /health */
 export type HealthStatus = {
   status: string;
@@ -426,7 +428,8 @@ export async function searchOutfit(
  * Optional auth: if user is signed in we send token, otherwise IP-based rate limit applies.
  */
 export async function findCelebrityLookalike(
-  imageDataUrl: string
+  imageDataUrl: string,
+  gender: LookalikeGender
 ): Promise<CelebrityLookalikeResponse> {
   const token = getStoredToken();
   const headers: HeadersInit = {
@@ -440,7 +443,7 @@ export async function findCelebrityLookalike(
   const response = await fetchJsonOrThrow(apiUrl("/api/outfits/lookalike"), {
     method: "POST",
     headers,
-    body: JSON.stringify({ imageDataUrl }),
+    body: JSON.stringify({ imageDataUrl, gender }),
   });
 
   const data = (await parseJsonSafe(response)) as

@@ -5,6 +5,7 @@ import { deriveRecommendationLayout, RecommendationExperience } from "@/componen
 import { createPortal } from "react-dom";
 import {
   CelebrityLookalikeResponse,
+  LookalikeGender,
   SearchItem,
   SESSION_TOKEN_KEY,
   clearStoredToken,
@@ -427,6 +428,7 @@ export default function Home() {
   const [authPanel, setAuthPanel] = useState<"none" | "login" | "register">("none");
   const [authNotice, setAuthNotice] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [lookalikeGender, setLookalikeGender] = useState<LookalikeGender | null>(null);
   const [lookalikeImageDataUrl, setLookalikeImageDataUrl] = useState<string | null>(null);
   const [lookalikeImageName, setLookalikeImageName] = useState("");
   const [lookalikeResult, setLookalikeResult] = useState<CelebrityLookalikeResponse | null>(null);
@@ -660,6 +662,12 @@ export default function Home() {
 
     setLookalikeError(null);
 
+    if (!lookalikeGender) {
+      setLookalikeError("Select gender first.");
+      event.target.value = "";
+      return;
+    }
+
     if (!LOOKALIKE_ALLOWED_MIME_TYPES.has(file.type)) {
       setLookalikeError("Use a JPEG, PNG, or WEBP image.");
       event.target.value = "";
@@ -701,11 +709,16 @@ export default function Home() {
       return;
     }
 
+    if (!lookalikeGender) {
+      setLookalikeError("Select gender first.");
+      return;
+    }
+
     setLookalikeLoading(true);
     setLookalikeError(null);
 
     try {
-      const result = await findCelebrityLookalike(lookalikeImageDataUrl);
+      const result = await findCelebrityLookalike(lookalikeImageDataUrl, lookalikeGender);
       setLookalikeResult(result);
     } catch (error) {
       setLookalikeResult(null);
@@ -713,6 +726,16 @@ export default function Home() {
     } finally {
       setLookalikeLoading(false);
     }
+  }
+
+  function handleLookalikeGenderSelect(gender: LookalikeGender) {
+    if (lookalikeGender === gender) {
+      return;
+    }
+
+    setLookalikeGender(gender);
+    setLookalikeResult(null);
+    setLookalikeError(null);
   }
 
   async function runSearchWithFollowUp(combinedPrompt: string) {
@@ -1084,6 +1107,27 @@ export default function Home() {
 
             <div className="mt-7 grid gap-6 md:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
               <div className="border border-[rgba(37,35,33,0.14)] bg-[#f4f1ea] p-4 sm:p-5">
+                <p className="text-[10px] uppercase tracking-[0.18em] text-stone-500">Select gender first</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {([
+                    { value: "female", label: "Female" },
+                    { value: "male", label: "Male" },
+                  ] as Array<{ value: LookalikeGender; label: string }>).map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => handleLookalikeGenderSelect(option.value)}
+                      className={`border px-3 py-2 text-[10px] uppercase tracking-[0.16em] transition ${
+                        lookalikeGender === option.value
+                          ? "border-[rgba(37,35,33,0.28)] bg-[#e8e3db] text-stone-900"
+                          : "border-[rgba(37,35,33,0.14)] bg-[#efebe3] text-stone-600 hover:border-[rgba(37,35,33,0.24)] hover:text-stone-800"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+
                 <input
                   ref={lookalikeFileRef}
                   type="file"
@@ -1094,13 +1138,16 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => lookalikeFileRef.current?.click()}
-                  disabled={lookalikeLoading}
+                  disabled={lookalikeLoading || !lookalikeGender}
                   className="border border-[rgba(37,35,33,0.2)] bg-[#ece8e0] px-3 py-2 text-[10px] uppercase tracking-[0.16em] text-stone-800 transition hover:border-[rgba(37,35,33,0.32)] disabled:cursor-not-allowed disabled:opacity-45"
                 >
                   Upload selfie
                 </button>
 
                 <p className="mt-3 text-[0.78rem] text-stone-500">JPG, PNG, WEBP up to 5MB</p>
+                {!lookalikeGender ? (
+                  <p className="mt-1 text-[0.78rem] text-stone-500">Pick a gender to enable upload and matching.</p>
+                ) : null}
 
                 {lookalikeImageDataUrl ? (
                   <div className="mt-4 overflow-hidden border border-[rgba(37,35,33,0.12)] bg-[#e6e0d6]">
@@ -1118,7 +1165,7 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={runLookalikeMatch}
-                  disabled={!lookalikeImageDataUrl || lookalikeLoading}
+                  disabled={!lookalikeImageDataUrl || lookalikeLoading || !lookalikeGender}
                   className="mt-4 w-full border border-stone-900 bg-stone-900 px-4 py-2.5 text-[10px] uppercase tracking-[0.18em] text-[#f4f1eb] transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-45"
                 >
                   {lookalikeLoading ? "Matching..." : "Find my match"}

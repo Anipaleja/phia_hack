@@ -144,6 +144,7 @@ router.post(
   async (req: Request, res: Response) => {
     try {
       const imageDataUrl = typeof req.body?.imageDataUrl === "string" ? req.body.imageDataUrl : "";
+      const genderRaw = typeof req.body?.gender === "string" ? req.body.gender.trim().toLowerCase() : "";
 
       if (!imageDataUrl) {
         return res.status(400).json({
@@ -154,11 +155,32 @@ router.post(
         });
       }
 
+      if (!genderRaw) {
+        return res.status(400).json({
+          error: {
+            code: "MISSING_GENDER",
+            message: "gender is required and must be male or female",
+          },
+        });
+      }
+
+      if (genderRaw !== "male" && genderRaw !== "female") {
+        return res.status(400).json({
+          error: {
+            code: "INVALID_GENDER",
+            message: "gender must be male or female",
+          },
+        });
+      }
+
+      const gender = genderRaw as "male" | "female";
+
       logger.info("Processing celebrity lookalike request", {
         userId: req.user?.id,
+        gender,
       });
 
-      const result = await CelebrityLookalikeService.findClosestCelebrity(imageDataUrl);
+      const result = await CelebrityLookalikeService.findClosestCelebrity(imageDataUrl, gender);
 
       return res.status(200).json(result);
     } catch (error) {

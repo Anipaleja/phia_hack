@@ -18,6 +18,8 @@ type ModelResult = {
   topMatches: Array<{ celebrity: string; confidence: number }>;
 };
 
+export type LookalikeGender = "male" | "female";
+
 export type CelebrityLookalikeResult = {
   closestCelebrity: string;
   confidence: number;
@@ -33,6 +35,32 @@ class CelebrityLookalikeService {
     "image/jpg",
     "image/png",
     "image/webp",
+  ]);
+
+  private static readonly MALE_CELEBRITIES = new Set([
+    "asap rocky",
+    "david beckham",
+    "harry styles",
+    "jacob elordi",
+    "jfk jr",
+    "kendrick lamar",
+    "paul mescal",
+    "pedro pascal",
+    "timothee chalamet",
+    "tyler the creator",
+  ]);
+
+  private static readonly FEMALE_CELEBRITIES = new Set([
+    "alexa chung",
+    "bella hadid",
+    "carolyn bessette kennedy",
+    "dua lipa",
+    "hailey bieber",
+    "kendall jenner",
+    "rihanna",
+    "sofia richie",
+    "the row era mary kate olsen",
+    "zendaya",
   ]);
 
   private static dataDirectoryCache: string | null = null;
@@ -85,7 +113,19 @@ class CelebrityLookalikeService {
       .trim();
   }
 
-  private static loadCelebrityNames(): string[] {
+  private static getCelebrityGender(normalizedCelebrityName: string): LookalikeGender | null {
+    if (CelebrityLookalikeService.MALE_CELEBRITIES.has(normalizedCelebrityName)) {
+      return "male";
+    }
+
+    if (CelebrityLookalikeService.FEMALE_CELEBRITIES.has(normalizedCelebrityName)) {
+      return "female";
+    }
+
+    return null;
+  }
+
+  private static loadCelebrityNames(gender: LookalikeGender): string[] {
     const dataDirectory = CelebrityLookalikeService.resolveDataDirectory();
     if (!dataDirectory) {
       return [];
@@ -116,6 +156,11 @@ class CelebrityLookalikeService {
 
       const normalized = CelebrityLookalikeService.normalizeCelebrityName(celebrityName);
       if (!normalized) {
+        continue;
+      }
+
+      const celebrityGender = CelebrityLookalikeService.getCelebrityGender(normalized);
+      if (celebrityGender !== gender) {
         continue;
       }
 
@@ -187,8 +232,10 @@ class CelebrityLookalikeService {
     };
   }
 
-  private static buildPrompt(celebrityNames: string[]): string {
+  private static buildPrompt(celebrityNames: string[], gender: LookalikeGender): string {
     return `You are matching a person's selfie to the closest celebrity from an approved list.
+
+Selected gender: ${gender}
 
 Approved celebrities:
 ${celebrityNames.map((name) => `- ${name}`).join("\n")}
@@ -380,21 +427,25 @@ Return exactly:
     }
   }
 
-  static async findClosestCelebrity(imageDataUrl: string): Promise<CelebrityLookalikeResult> {
+  static async findClosestCelebrity(
+    imageDataUrl: string,
+    gender: LookalikeGender
+  ): Promise<CelebrityLookalikeResult> {
     const image = CelebrityLookalikeService.parseDataUrl(imageDataUrl);
-    const celebrityNames = CelebrityLookalikeService.loadCelebrityNames();
+    const celebrityNames = CelebrityLookalikeService.loadCelebrityNames(gender);
 
     if (celebrityNames.length === 0) {
       throw new AppError(
-        "No celebrity reference data available",
+        "No celebrity reference data available for selected gender",
         "NO_CELEBRITY_DATA",
         500
       );
     }
 
-    const prompt = CelebrityLookalikeService.buildPrompt(celebrityNames);
+    const prompt = CelebrityLookalikeService.buildPrompt(celebrityNames, gender);
 
     logger.info("Starting celebrity lookalike inference", {
+      gender,
       candidateCount: celebrityNames.length,
       imageBytes: image.byteLength,
     });

@@ -5,30 +5,29 @@
     "harry"
   ],
   "article1": {
-    "name": "Printed Camp Collar Shirt",
-    "style": "maximalist",
-    "color": "multicolor",
-    "material": "silk",
+    "name": "PANGAIA Hoodie",
+    "style": "elevated athleisure",
+    "color": "tourmaline pink",
+    "material": "cotton",
     "productUrl": "https://poshmark.com/listing/NWOT-Pangaia-365-Midweight-Hoodie-Tourmaline-Pink-64c0892581078a585855506f?srsltid=AfmBOoqrDfOCcV6s5vr76EsQS5G7AdPRnj6vvJ2OhobKHid0qgHFKgK3",
-    "price": 1400,
-    "imageUrl": "https://images.unsplash.com/photo-1618677603286-0ec56cb6e1b5?auto=format&fit=crop&w=1200&q=80"
-  },
+    "price": 95,
+    "imageUrl": "https://di2ponv0v5otw.cloudfront.net/posts/2023/07/25/64c0892581078a585855506f/l_64c089401645f726663aaec5.jpg"
   "article2": {
-    "name": "High-Waist Flared Trouser",
-    "style": "70s-inspired",
-    "color": "cream",
-    "material": "wool",
+    "name": "Ray-Ban RB2180",
+    "style": "retro minimal",
+    "color": "light havana",
+    "material": "propionate",
     "productUrl": "https://www.ray-ban.com/usa/sunglasses/RB2180rb2180-light%20havana/8053672416039",
-    "price": 620,
-    "imageUrl": "https://images.unsplash.com/photo-1506629905607-e0d58b1f1e9f?auto=format&fit=crop&w=1200&q=80"
+    "price": 194,
+    "imageUrl": "https://images2.ray-ban.com//cdn-record-files-pi/504bf5bb-962f-4322-ace6-a42e0162849f/d35e905c-c1ba-4b78-921c-acfd003d7178/0RB2180__710_83__STD__shad__fr.png?impolicy=RB_Product_clone&width=1440&bgc=%23f2f2f2"
   },
   "article3": {
-    "name": "Cuban Heel Chelsea Boot",
-    "style": "rock",
-    "color": "black",
-    "material": "suede",
+    "name": "Sézane Marino Trousers",
+    "style": "tailored minimal",
+    "color": "navy",
+    "material": "wool",
     "productUrl": "https://www.sezane.com/us-en/product/marino-trousers/navy#size-0",
-    "price": 1090,
-    "imageUrl": "https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?auto=format&fit=crop&w=1200&q=80"
+    "price": 180,
+    "imageUrl": "https://media.sezane.com/image/upload/c_fill,d_placeholder_dark.png,fl_progressive:semi,h_816,q_auto:best,w_582/nz2xnyekyooky2sauklk.jpg"
   }
 }

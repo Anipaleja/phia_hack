@@ -12,8 +12,8 @@
     "color": "khaki",
     "material": "cotton twill",
     "productUrl": "https://www.mrporter.com/en-us/mens/product/rrl/accessories/caps/logo-appliqued-herringbone-cotton-twill-baseball-cap/1647597306253541?cm_mmc=PartnerizeAM-_-condenast-_-Content-_-1100l20065&utm_source=partnerize&utm_medium=affiliation&utm_campaign=xq_1100l20065&utm_content=condenast&clickref=1101lDfpx549&adj_t=19hgz889&adj_campaign=xq_1100l20065",
-    "price": 95,
-    "imageUrl": "https://images.unsplash.com/photo-1521369909029-2afed882baee?auto=format&fit=crop&w=1200&q=80"
+    "price": 115,
+    "imageUrl": "https://www.mrporter.com/variants/images/1647597306253541/in/w2000_q60.jpg"
   },
   "article2": {
     "name": "Trumbull College Tie",
@@ -21,16 +21,16 @@
     "color": "navy",
     "material": "silk",
     "productUrl": "https://jpress.com/products/trumbull-college-1?ktk=dzRvc1p2LWYzNmI0ZWFiNzM4&sub_id=100096X1555748X1b8dd2957a9b723725af8d6ea36e3a0b&parentUrl=gq.com",
-    "price": 110,
-    "imageUrl": "https://images.unsplash.com/photo-1598032895397-b9472444bf93?auto=format&fit=crop&w=1200&q=80"
+    "price": 98,
+    "imageUrl": "https://jpress.com/cdn/shop/files/JP_0530_Accessories_10.jpg?v=1748638757&width=1300"
   },
   "article3": {
-    "name": "Classic Fit Navy Blazer",
+    "name": "Classic Fit Grey Blazer",
     "style": "heritage",
-    "color": "navy",
+    "color": "Grey",
     "material": "wool blend",
-    "productUrl": "https://www.jcrew.com/p/mens/categories/clothing/blazers/suit-jackets/BZ638?cjdata=MXxOfDB8WXww&display=all&fit=Classic&colorProductCode=BZ638&colorCode=BL7493&srcCode=affiliate|Media|Cond%C3%A9+Nast|AFFI0001&siteId=CJ_8984094_Cond%C3%A9+Nast&utm_source=Cond%C3%A9+Nast&utm_medium=affiliate&utm_content=Media&utm_campaign=AFFI0001&cjevent=21581d703b9b11f1836902590a82b821&$web_only=true",
-    "price": 298,
-    "imageUrl": "https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?auto=format&fit=crop&w=1200&q=80"
+    "productUrl": https://www.jcrew.com/p/mens/categories/clothing/blazers/suit-jackets/BZ636?display=all&fit=Classic&colorProductCode=BZ636&color_name=grey",
+    "price": 550,
+    "imageUrl": "https://www.jcrew.com/s7-img-facade/BZ636_WZ4000?hei=1080&crop=0,0,864,0"
   }
 }

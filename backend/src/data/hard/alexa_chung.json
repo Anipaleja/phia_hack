@@ -11,7 +11,7 @@
     "material": "teddy fleece",
     "productUrl": "https://www.newlook.com/uk/womens/clothing/tan-teddy-long-coat/p/859878118?extcam=UK_AFF_EDI_TechRadar&affID=103504&caId=4&pei=3&pbrd=1&awc=1946_1776569513_d43752ee4802aefa2335105812c75d5a&sv1=affiliate&sv_campaign_id=103504&awc=1946_1776569513_d43752ee4802aefa2335105812c75d5a",
     "price": 65,
-    "imageUrl": "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1200&q=80"
+    "imageUrl": "https://media2.newlookassets.com/i/newlook/859878118/womens/clothing/tan-teddy-long-coat.jpg?strip=true&qlt=50&w=1200"
   },
   "article2": {
     "name": "Nancy Satin Wide Leg Trousers",
@@ -20,15 +20,15 @@
     "material": "satin",
     "productUrl": "https://www.ghost.co.uk/nancy-satin-wide-leg-trousers-lp07g003-m12",
     "price": 89,
-    "imageUrl": "https://images.unsplash.com/photo-1552902865-b72c031ac5ea?auto=format&fit=crop&w=1200&q=80"
+    "imageUrl": "https://ghostmediastorage.blob.core.windows.net/productimages/LP/LP07G003-M12-30410-650px-964px.jpg"
   },
   "article3": {
     "name": "Classic M&S Women Shoes",
     "style": "retro",
     "color": "black",
     "material": "leather",
-    "productUrl": "https://www.marksandspencer.com/l/women/shoes#intid=offsale-redirect_P60633868_T026938",
-    "price": 79,
-    "imageUrl": "https://images.unsplash.com/photo-1515347619252-60a4bf4fff4f?auto=format&fit=crop&w=1200&q=80"
+    "productUrl": "https://www.marksandspencer.com/leather-triple-strap-mary-jane-ballet-pumps/p/clp60777775?color=BLACK#intid=pid_pg1pip48g4r2c2",
+    "price": 46,
+    "imageUrl": "https://assets.digitalcontent.marksandspencer.app/images/w_2560,q_auto,f_auto/SD_01_T02_3777_Y0_X_EC_0/Leather-Triple-Strap-Mary-Jane-Ballet-Pumps"
   }
 }

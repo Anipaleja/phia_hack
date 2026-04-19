@@ -12,6 +12,20 @@ import {
   signup,
 } from "@/lib/api";
 
+function buildExampleImageUrl(label: string): string {
+  const safeLabel = label.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="800" height="1000" viewBox="0 0 800 1000">
+      <rect width="800" height="1000" fill="#e9e3d8"/>
+      <rect x="44" y="44" width="712" height="912" rx="40" fill="#f7f3ec" stroke="#b8afa2" stroke-width="2"/>
+      <text x="400" y="470" text-anchor="middle" font-family="Georgia, serif" font-size="40" fill="#544d45">${safeLabel}</text>
+      <text x="400" y="535" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" fill="#7a6f63">Source image unavailable</text>
+    </svg>
+  `.trim();
+
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
+
 type ChatMessage = {
   role: "assistant" | "user";
   text: string;
@@ -41,8 +55,7 @@ const EXAMPLE_PRODUCTS: SearchItem[] = [
     title: "Washed Oxford Shirt",
     price: 118,
     currency: "USD",
-    imageUrl:
-      "https://images.unsplash.com/photo-1603252109303-2751441dd157?auto=format&fit=crop&w=900&q=80",
+    imageUrl: buildExampleImageUrl("Washed Oxford Shirt"),
     productUrl: "#",
     store: "J.Crew",
     score: 0.91,
@@ -52,8 +65,7 @@ const EXAMPLE_PRODUCTS: SearchItem[] = [
     title: "Pleated Cotton Chinos",
     price: 135,
     currency: "USD",
-    imageUrl:
-      "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?auto=format&fit=crop&w=900&q=80",
+    imageUrl: buildExampleImageUrl("Pleated Cotton Chinos"),
     productUrl: "#",
     store: "Brooks Brothers",
     score: 0.88,
@@ -63,8 +75,7 @@ const EXAMPLE_PRODUCTS: SearchItem[] = [
     title: "Leather Penny Loafers",
     price: 149,
     currency: "USD",
-    imageUrl:
-      "https://images.unsplash.com/photo-1614252369475-531eba835eb1?auto=format&fit=crop&w=900&q=80",
+    imageUrl: buildExampleImageUrl("Leather Penny Loafers"),
     productUrl: "#",
     store: "G.H. Bass",
     score: 0.9,
@@ -74,8 +85,7 @@ const EXAMPLE_PRODUCTS: SearchItem[] = [
     title: "Navy Unstructured Blazer",
     price: 160,
     currency: "USD",
-    imageUrl:
-      "https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?auto=format&fit=crop&w=900&q=80",
+    imageUrl: buildExampleImageUrl("Navy Unstructured Blazer"),
     productUrl: "#",
     store: "Polo Ralph Lauren",
     score: 0.87,
@@ -267,14 +277,20 @@ function MessageBubble({
                       {item.reason ??
                         "Works for this direction thanks to its clean silhouette and understated color balance."}
                     </p>
-                    <a
-                      href={item.productUrl}
-                      className="inline-block pt-1 text-[10px] uppercase tracking-[0.14em] text-stone-900 transition-opacity duration-200 hover:opacity-70"
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      View piece
-                    </a>
+                    {item.productUrl ? (
+                      <a
+                        href={item.productUrl}
+                        className="inline-block pt-1 text-[10px] uppercase tracking-[0.14em] text-stone-900 transition-opacity duration-200 hover:opacity-70"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Open product page
+                      </a>
+                    ) : (
+                      <p className="pt-1 text-[10px] uppercase tracking-[0.14em] text-stone-500">
+                        Live product link unavailable
+                      </p>
+                    )}
                   </div>
                 </article>
               ))}
@@ -341,6 +357,7 @@ export default function Home() {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [basePrompt, setBasePrompt] = useState("");
+  const [awaitingFollowUp, setAwaitingFollowUp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
@@ -477,11 +494,10 @@ export default function Home() {
           ...prev,
           {
             role: "assistant",
-            text: "",
-            lockedPreview: true,
-            products: EXAMPLE_PRODUCTS,
+            text: "Please log in to view live product matches with real price, product image, and product link.",
           },
         ]);
+        setAuthPanel("login");
         setLoading(false);
         return;
       }
@@ -509,12 +525,7 @@ export default function Home() {
         ...prev,
         {
           role: "assistant",
-          text: `Could not load live results (${message}). Showing a curated preview instead.`,
-        },
-        {
-          role: "assistant",
-          text: "Preview",
-          products: EXAMPLE_PRODUCTS,
+          text: `Could not load live results (${message}). Please try a more specific prompt.`,
         },
       ]);
     }

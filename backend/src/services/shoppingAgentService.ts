@@ -5,7 +5,6 @@ import { AppError } from "../utils/errorHandler";
 import logger from "../utils/logger";
 import AIService from "./aiService";
 import AnalyticsService from "./analyticsService";
-import ImageService from "./imageService";
 import PriceService from "./priceService";
 import RecommendationService from "./recommendationService";
 import ShareService from "./shareService";
@@ -18,8 +17,20 @@ import ShareService from "./shareService";
 
 const outfitCache = new NodeCache({ stdTTL: 3600 });
 const promptCache = new NodeCache({ stdTTL: 3600 });
+const outfitCacheNamespace = process.env.SCRAPER_CACHE_NAMESPACE || "productscrapes-v3";
 
 export class ShoppingAgentService {
+  private static isCompletePricePoint(point?: PricePoint | null): point is PricePoint {
+    if (!point) {
+      return false;
+    }
+
+    const hasHttpProductUrl = /^https?:\/\//i.test(point.productUrl || "");
+    const hasHttpImageUrl = /^https?:\/\//i.test(point.imageUrl || "");
+
+    return Number.isFinite(point.price) && point.price > 0 && hasHttpProductUrl && hasHttpImageUrl;
+  }
+
   /**
    * Select best price point based on tier preference
    */
@@ -92,9 +103,16 @@ export class ShoppingAgentService {
       });
 
       // Step 3: Combine into outfit items with 3-tier pricing and listing images
-      const outfitItems: OutfitItem[] = styleItems.map((style, index) => {
+      const outfitItems: OutfitItem[] = styleItems
+        .map((style, index): OutfitItem | null => {
         const priceData = priceResults[index];
-        const pricePoints = priceData?.pricePoints || [];
+        const pricePoints = (priceData?.pricePoints || []).filter((point) =>
+          ShoppingAgentService.isCompletePricePoint(point)
+        );
+
+        if (pricePoints.length === 0) {
+          return null;
+        }
 
         // Select prices based on budget tier
         let cheapPrice: PricePoint | null = null;
@@ -127,13 +145,13 @@ export class ShoppingAgentService {
             ? midPrice
             : budgetTier === "expensive"
             ? expensivePrice
-            : midPrice || cheapPrice || expensivePrice;
+            : midPrice || cheapPrice || expensivePrice || pricePoints[0];
 
-        const listingImageUrl =
-          primaryPrice?.imageUrl ||
-          priceData?.cheapest?.imageUrl ||
-          pricePoints.find((pricePoint) => pricePoint.imageUrl)?.imageUrl ||
-          null;
+        if (!ShoppingAgentService.isCompletePricePoint(primaryPrice)) {
+          return null;
+        }
+
+        const listingImageUrl = primaryPrice.imageUrl;
 
         return {
           item: style.item,
@@ -155,32 +173,20 @@ export class ShoppingAgentService {
             expensive: expensivePrice,
           },
         };
-      });
+      })
+      .filter((item): item is OutfitItem => Boolean(item));
 
-      const missingImageEntries = outfitItems
-        .map((outfitItem, index) => ({ outfitItem, index }))
-        .filter(({ outfitItem }) => outfitItem.images.length === 0);
-
-      if (missingImageEntries.length > 0) {
-        const fallbackImages = await ImageService.getImagesForItems(
-          missingImageEntries.map(({ outfitItem }) => ({
-            item: outfitItem.item,
-            style: outfitItem.style,
-            color: outfitItem.color,
-          }))
+      if (outfitItems.length === 0) {
+        throw new AppError(
+          "No live products with complete price, image, and URL were found for this request",
+          "LIVE_PRODUCT_DATA_UNAVAILABLE",
+          502
         );
-
-        fallbackImages.forEach((fallback, fallbackIndex) => {
-          const targetIndex = missingImageEntries[fallbackIndex]?.index;
-
-          if (typeof targetIndex === "number") {
-            outfitItems[targetIndex].images = fallback.images;
-          }
-        });
       }
 
       logger.info("Outfit generation complete", {
         itemCount: outfitItems.length,
+        droppedItems: styleItems.length - outfitItems.length,
       });
 
       return outfitItems;
@@ -208,8 +214,8 @@ export class ShoppingAgentService {
   ): Promise<OutfitResponse> {
     const startTime = Date.now();
     const normalizedPrompt = prompt.trim().toLowerCase();
-    const cacheKey = `outfit:${budgetTier}:${normalizedPrompt}`;
-    const promptCacheKey = `prompt:${normalizedPrompt}`;
+    const cacheKey = `${outfitCacheNamespace}:outfit:${budgetTier}:${normalizedPrompt}`;
+    const promptCacheKey = `${outfitCacheNamespace}:prompt:${normalizedPrompt}`;
 
     const cachedResponse = outfitCache.get<OutfitResponse>(cacheKey);
     if (cachedResponse) {

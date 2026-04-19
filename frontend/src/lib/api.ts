@@ -168,7 +168,9 @@ export async function signup(
 }
 
 function pickDisplayPrice(it: BackendOutfitItem): BackendPricePoint | null {
-  return it.prices.mid ?? it.prices.cheap ?? it.prices.expensive;
+  const ordered = [it.prices.mid, it.prices.cheap, it.prices.expensive];
+  const found = ordered.find((pricePoint) => hasCompletePricePoint(pricePoint));
+  return found ?? null;
 }
 
 function titleCase(s: string) {
@@ -178,25 +180,68 @@ function titleCase(s: string) {
     .join(" ");
 }
 
+function isRealProductUrl(url?: string): boolean {
+  return Boolean(url && /^https?:\/\//i.test(url) && !url.includes("example.com"));
+}
+
+function isRealImageUrl(url?: string): boolean {
+  if (!url || !/^https?:\/\//i.test(url)) {
+    return false;
+  }
+
+  const normalized = url.toLowerCase();
+  const blockedKeywords = ["logo", "icon", "sprite", "thumbnail", "thumb", "avatar", "placeholder"];
+  return !blockedKeywords.some((keyword) => normalized.includes(keyword));
+}
+
+function hasCompletePricePoint(price?: BackendPricePoint | null): price is BackendPricePoint {
+  if (!price) {
+    return false;
+  }
+
+  return (
+    Number.isFinite(price.price) &&
+    price.price > 0 &&
+    isRealProductUrl(price.productUrl) &&
+    isRealImageUrl(price.imageUrl)
+  );
+}
+
+function parseStoreFromUrl(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "Shop";
+  }
+}
+
 /**
  * Map backend outfit items to UI cards.
  */
 export function mapOutfitToSearchItems(outfit: BackendOutfitItem[]): SearchItem[] {
-  return outfit.map((it, index) => {
-    const price = pickDisplayPrice(it);
-    const imageUrl = price?.imageUrl ?? it.images?.[0]?.url ?? "";
-    return {
-      id: `${it.item}-${index}`,
-      title: titleCase(it.item || "Item"),
-      price: price?.price ?? 0,
-      currency: price?.currency ?? "USD",
-      imageUrl,
-      productUrl: price?.productUrl ?? "#",
-      store: price?.retailer ?? "Shop",
-      score: 0.9,
-      reason: [it.style, it.color, it.material].filter(Boolean).join(" · "),
-    };
-  });
+  return outfit
+    .map((it, index): SearchItem | null => {
+      const price = pickDisplayPrice(it);
+
+      if (!hasCompletePricePoint(price)) {
+        return null;
+      }
+
+      const store = (price.retailer || "").trim() || parseStoreFromUrl(price.productUrl);
+
+      return {
+        id: `${it.item}-${index}`,
+        title: titleCase(price.productName || it.item || "Item"),
+        price: price.price,
+        currency: price.currency || "USD",
+        imageUrl: price.imageUrl!,
+        productUrl: price.productUrl,
+        store,
+        score: 0.9,
+        reason: [it.style, it.color, it.material].filter(Boolean).join(" · "),
+      };
+    })
+    .filter((item): item is SearchItem => Boolean(item));
 }
 
 export type SearchOutfitOptions = {
@@ -246,6 +291,12 @@ export async function searchOutfit(
   const outfitResponse = data as GenerateOutfitResponse;
   const outfit = outfitResponse.variants ?? outfitResponse.outfit ?? [];
   const items = mapOutfitToSearchItems(outfit);
+
+  if (items.length === 0) {
+    throw new Error(
+      "No live products with complete price, image, and product link were found. Try a more specific prompt."
+    );
+  }
 
   return {
     items,

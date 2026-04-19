@@ -1,0 +1,36 @@
+{
+  "celebrity": "The Row-era Mary-Kate Olsen",
+  "aliases": [
+    "the row-era mary-kate olsen",
+    "mary-kate olsen",
+    "mary kate olsen",
+    "the row mary kate"
+  ],
+  "article1": {
+    "name": "Ramses Birko-Flor Nubuk Sandal",
+    "style": "quiet minimalist",
+    "color": "black",
+    "material": "birko-flor",
+    "productUrl": "https://www.birkenstock.com/us/ramses-birko-flor-nubuk/ramses-core-birkoflornubuck-0-eva-m_972.html",
+    "price": 55,
+    "imageUrl": "https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?auto=format&fit=crop&w=1200&q=80"
+  },
+  "article2": {
+    "name": "Oversized Shirt",
+    "style": "row aesthetic",
+    "color": "light blue",
+    "material": "cotton",
+    "productUrl": "https://www.stories.com/en-us/product/oversized-shirt-light-blue-1246774011/?utm_source=google&utm_medium=cpc&utm_campaign=us-stories-evg-evg-paidsearch-google-conversion-purchase-prospecting-pmax-nonbrandnca&utm_content=brand&utm_id=21017144823&gad_source=1&gad_campaignid=21024006629&gbraid=0AAAAADCH3pTrqNHAfsRN3YIiWHQEFjKBd&gclid=CjwKCAjw14zPBhAuEiwAP3-Eb3VfEZclqDpbw3m1jn1VhP-q8X8sYEg0XMQ7tuAhk8CO4TyqM8UWxBoCbyEQAvD_BwE",
+    "price": 99,
+    "imageUrl": "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=1200&q=80"
+  },
+  "article3": {
+    "name": "Cropped Wide-Leg Jeans",
+    "style": "understated",
+    "color": "light blue",
+    "material": "denim",
+    "productUrl": "https://www.stories.com/en-us/product/cropped-wide-leg-jeans-light-blue-1259942003/?utm_source=google&utm_medium=cpc&utm_campaign=us-stories-evg-evg-paidsearch-google-conversion-purchase-catalogsales-multi-shopping-brand&utm_content=brand&utm_id=6497101321&gad_source=1&gad_campaignid=6497101321&gbraid=0AAAAADCH3pQH4BZejThGmRstOAN39JOhB&gclid=CjwKCAjw14zPBhAuEiwAP3-EbxMmtTw225W-qr-OmZPjoUb5cUVjI-HXPiqVo2ejFMqtw5bNisdVLxoCfrIQAvD_BwE",
+    "price": 89,
+    "imageUrl": "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?auto=format&fit=crop&w=1200&q=80"
+  }
+}

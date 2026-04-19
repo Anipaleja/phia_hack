@@ -1,0 +1,36 @@
+{
+  "celebrity": "Kendrick Lamar",
+  "aliases": [
+    "kendrik lamar",
+    "kendrick",
+    "lamar",
+    "kendrick lamar"
+  ],
+  "article1": {
+    "name": "Air DT Max '96",
+    "style": "retro runner",
+    "color": "University Red",
+    "material": "synthetic leather",
+    "productUrl": "https://www.nike.com/launch/t/air-dt-max-96-university-red",
+    "price": 180,
+    "imageUrl": "https://static.nike.com/a/images/w_1280,c_limit,q_auto,f_auto/0c385a23-bdda-4efd-b266-60788a1a1537/air-dt-max-96-university-red-if1617-600-release-date.jpg"
+  },
+  "article2": {
+    "name": "Flared Baggy Jeans",
+    "style": "Baggy",
+    "color": "Medium Tinted Denim",
+    "material": "denim",
+    "productUrl": "https://www.ae.com/us/en/p/men/clearance/bottoms/jeans/bootcut-jeans/ae-airflex-slim-flare-jean/1114_7421_909",
+    "price": 29.99,
+    "imageUrl": "https://s7d2.scene7.com/is/image/aeo/1114_7421_909_f?$pdp-mdg-opt$&fmt=webp"
+  },
+  "article3": {
+    "name": "Laidback Luxe Heavyweight Hoodie",
+    "style": "casual",
+    "color": "washed red",
+    "material": "cotton",
+    "productUrl": "https://www.ae.com/us/en/p/women/hoodies-sweatshirts/hoodie-henley-sweatshirts/ae-laidback-luxe-heavyweight-hoodie/0193_2721_648?menu=cat4840004",
+    "price": 23.98,
+    "imageUrl": "https://s7d2.scene7.com/is/image/aeo/0193_2721_648_of?$pdp-mdg-opt$&fmt=webp"
+  }
+}

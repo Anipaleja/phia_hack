@@ -1,0 +1,34 @@
+{
+  "celebrity": "Harry Styles",
+  "aliases": [
+    "harry styles",
+    "harry"
+  ],
+  "article1": {
+    "name": "Printed Camp Collar Shirt",
+    "style": "maximalist",
+    "color": "multicolor",
+    "material": "silk",
+    "productUrl": "https://poshmark.com/listing/NWOT-Pangaia-365-Midweight-Hoodie-Tourmaline-Pink-64c0892581078a585855506f?srsltid=AfmBOoqrDfOCcV6s5vr76EsQS5G7AdPRnj6vvJ2OhobKHid0qgHFKgK3",
+    "price": 1400,
+    "imageUrl": "https://images.unsplash.com/photo-1618677603286-0ec56cb6e1b5?auto=format&fit=crop&w=1200&q=80"
+  },
+  "article2": {
+    "name": "High-Waist Flared Trouser",
+    "style": "70s-inspired",
+    "color": "cream",
+    "material": "wool",
+    "productUrl": "https://www.ray-ban.com/usa/sunglasses/RB2180rb2180-light%20havana/8053672416039",
+    "price": 620,
+    "imageUrl": "https://images.unsplash.com/photo-1506629905607-e0d58b1f1e9f?auto=format&fit=crop&w=1200&q=80"
+  },
+  "article3": {
+    "name": "Cuban Heel Chelsea Boot",
+    "style": "rock",
+    "color": "black",
+    "material": "suede",
+    "productUrl": "https://www.sezane.com/us-en/product/marino-trousers/navy#size-0",
+    "price": 1090,
+    "imageUrl": "https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?auto=format&fit=crop&w=1200&q=80"
+  }
+}

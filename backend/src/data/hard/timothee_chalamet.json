@@ -1,0 +1,35 @@
+{
+  "celebrity": "Timothée Chalamet",
+  "aliases": [
+    "timothee chalamet",
+    "timothee",
+    "chalamet"
+  ],
+  "article1": {
+    "name": "Cropped Satin Bomber",
+    "style": "avant",
+    "color": "midnight",
+    "material": "satin",
+    "productUrl": "https://www.asos.com/us/topman/topman-faux-leather-a2-jacket-in-brown/prd/206988853",
+    "price": 3200,
+    "imageUrl": "https://images.unsplash.com/photo-1516257984-b1b4d707412e?auto=format&fit=crop&w=1200&q=80"
+  },
+  "article2": {
+    "name": "Pleated Wide Trouser",
+    "style": "runway",
+    "color": "black",
+    "material": "wool",
+    "productUrl": "https://www.asos.com/us/asos-design/asos-design-baggy-parachute-cord-pants-in-cream/prd/207122479",
+    "price": 980,
+    "imageUrl": "https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?auto=format&fit=crop&w=1200&q=80"
+  },
+  "article3": {
+    "name": "Harness Boot",
+    "style": "edgy",
+    "color": "black",
+    "material": "leather",
+    "productUrl": "https://www.asos.com/us/nike/nike-air-more-uptempo-sneakers-in-stone-with-red-detail/prd/205547690",
+    "price": 950,
+    "imageUrl": "https://images.unsplash.com/photo-1527010154944-f2241763d806?auto=format&fit=crop&w=1200&q=80"
+  }
+}

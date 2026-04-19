@@ -1,0 +1,35 @@
+{
+  "celebrity": "Hailey Bieber",
+  "aliases": [
+    "hailey bieber",
+    "hailey baldwin",
+    "hailey"
+  ],
+  "article1": {
+    "name": "Boxy Leather Bomber",
+    "style": "off-duty",
+    "color": "black",
+    "material": "leather",
+    "productUrl": "https://www.urbanoutfitters.com/shop/hybrid/levis-501-90s-jean3?color=091&size=27&type=STANDARD&creative=&device=c&g_acctid=312-727-9506&g_adgroupid=&g_adid=&g_adtype=none&g_campaign=%5BNB+PLA+US%5D+-+PMAX+-+Womens+-+Denim&g_campaignid=20029043709&g_keyword=&g_keywordid=&g_network=x&g_type=shopping&matchtype=&network=x&utm_campaign=%5BNB+PLA+US%5D+-+PMAX+-+Womens+-+Denim&utm_content=&utm_kxconfid=vx6q4l3b6&utm_medium=cpc&utm_source=google&utm_term=&gclsrc=aw.ds&gad_source=1&gad_campaignid=20033969210&gbraid=0AAAAADpxK_8aLxb-g8AQNE-0BchcKzAVf&gclid=CjwKCAjw14zPBhAuEiwAP3-Eb6tkO0lp0xp1gBsaJ6l2h8JW8VWz1ugqX2c-D7Vj0xtZq9Nzk6eHhBoCpzsQAvD_BwE",
+    "price": 298,
+    "imageUrl": "https://images.unsplash.com/photo-1551232864-3f0890e580d9?auto=format&fit=crop&w=1200&q=80"
+  },
+  "article2": {
+    "name": "Ribbed Tank Dress",
+    "style": "minimal",
+    "color": "stone",
+    "material": "cotton rib",
+    "productUrl": "https://www.macys.com/shop/product/mango-womens-polo-style-sweater?ID=11491680",
+    "price": 135,
+    "imageUrl": "https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=1200&q=80"
+  },
+  "article3": {
+    "name": "Retro Sneaker",
+    "style": "sporty",
+    "color": "white and gum",
+    "material": "leather and suede",
+    "productUrl": "https://www.utwgn.com/products/air-jordan-1-retro-high-og-nrg-union-storm-blue-1?currency=USD&variant=42899652870192&utm_source=google&utm_medium=cpc&utm_campaign=Google%20Shopping&stkn=efd72bab7adb&gad_source=1&gad_campaignid=23711048790&gbraid=0AAAABB0KJUAgc8hMsJ1ZAvw99YYgKFKh4&gclid=CjwKCAjw14zPBhAuEiwAP3-EbzDE5e0kj3BD-G2seUwjZWX5ZLx4w8FkjDdg3Znt1jBcrwSWJgSR9xoC02sQAvD_BwE",
+    "price": 100,
+    "imageUrl": "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1200&q=80"
+  }
+}

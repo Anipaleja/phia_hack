@@ -1,0 +1,34 @@
+{
+  "celebrity": "Alexa Chung",
+  "aliases": [
+    "alexa chung",
+    "alexa"
+  ],
+  "article1": {
+    "name": "Tan Teddy Long Coat",
+    "style": "brit cool",
+    "color": "tan",
+    "material": "teddy fleece",
+    "productUrl": "https://www.newlook.com/uk/womens/clothing/tan-teddy-long-coat/p/859878118?extcam=UK_AFF_EDI_TechRadar&affID=103504&caId=4&pei=3&pbrd=1&awc=1946_1776569513_d43752ee4802aefa2335105812c75d5a&sv1=affiliate&sv_campaign_id=103504&awc=1946_1776569513_d43752ee4802aefa2335105812c75d5a",
+    "price": 65,
+    "imageUrl": "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1200&q=80"
+  },
+  "article2": {
+    "name": "Nancy Satin Wide Leg Trousers",
+    "style": "vintage feminine",
+    "color": "black",
+    "material": "satin",
+    "productUrl": "https://www.ghost.co.uk/nancy-satin-wide-leg-trousers-lp07g003-m12",
+    "price": 89,
+    "imageUrl": "https://images.unsplash.com/photo-1552902865-b72c031ac5ea?auto=format&fit=crop&w=1200&q=80"
+  },
+  "article3": {
+    "name": "Classic M&S Women Shoes",
+    "style": "retro",
+    "color": "black",
+    "material": "leather",
+    "productUrl": "https://www.marksandspencer.com/l/women/shoes#intid=offsale-redirect_P60633868_T026938",
+    "price": 79,
+    "imageUrl": "https://images.unsplash.com/photo-1515347619252-60a4bf4fff4f?auto=format&fit=crop&w=1200&q=80"
+  }
+}

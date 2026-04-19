@@ -1,0 +1,35 @@
+{
+  "celebrity": "Jacob Elordi",
+  "aliases": [
+    "jacob elordi",
+    "jacob",
+    "elordi"
+  ],
+  "article1": {
+    "name": "The 1991 Loose Straight Jean",
+    "style": "off-duty",
+    "color": "verhalen wash",
+    "material": "denim",
+    "productUrl": "https://www.madewell.com/p/mens/sale/jeans/the-1991-loose-straight-jean-in-verhalen-wash/NO586/?cjevent=5ee0443c3b9811f1836902550a82b821&cjdata=MXxOfDB8WXww&utm_campaign=MWAFFI00001&utm_medium=affiliate&srcCode=affiliate|Other|Skimlinks|MWAFFI00001&siteId=CJ_100091140_Skimlinks&utm_source=Skimlinks&utm_content=Other",
+    "price": 138,
+    "imageUrl": "https://images.unsplash.com/photo-1584370848010-d7fe6bc767ec?auto=format&fit=crop&w=1200&q=80"
+  },
+  "article2": {
+    "name": "Open-Collar Sweater Polo",
+    "style": "quiet luxury",
+    "color": "heather taupe",
+    "material": "yak alpaca blend",
+    "productUrl": "https://www.madewell.com/p/mens/clothing/sweaters/sweater-polos/open-collar-sweater-polo-in-yak-alpaca-blend/NY130/?ccode=HT3402&size=M&source=googlePLA&srcCode=Paid_Search|Shopping_NonBrand_PMax_NCA|Google|MWGGBS00002_99107933301_22500787653___c_pla_with_promotion_online__9060351&utm_source=google&utm_medium=cpc&utm_campaign=&utm_term=&utm_content=shopping_ads&gclsrc=aw.ds&gad_source=1&gad_campaignid=22510837129&gbraid=0AAAAADpsc9OvFVetmqQcPEvCsujzT_rEL&gclid=CjwKCAjw14zPBhAuEiwAP3-EbzI8YjmhCNb5LkpTnyw1AII_HiTAiv2gotfZDMDW5fT0U9rZoLPMExoC9HwQAvD_BwE",
+    "price": 118,
+    "imageUrl": "https://images.unsplash.com/photo-1617137968427-85924c800a22?auto=format&fit=crop&w=1200&q=80"
+  },
+  "article3": {
+    "name": "UNIQLO Activewear Essential",
+    "style": "athleisure",
+    "color": "gray",
+    "material": "technical fabric",
+    "productUrl": "https://www.uniqlo.com/us/en/products/E485765-000/00?colorDisplayCode=37&sizeDisplayCode=999&utm_campaign=pmax_new-customer_product_activewear_google_cpc_sales_us_evergreen_en&utm_source=google&utm_medium=cpc&campaignid=22212239938&device=c&network=x&gad_source=1&gad_campaignid=22202000370&gbraid=0AAAAADwNkrIBWe_7JSpBa_W8UC7zxf4Cl&gclid=CjwKCAjw14zPBhAuEiwAP3-Ebz7Vz8AAupmtBFoSDBbfZnG-oQm-4_p2KNFNuS0zsXV3Ywli9sjX9xoC7I0QAvD_BwE",
+    "price": 49.9,
+    "imageUrl": "https://images.unsplash.com/photo-1506629905607-e0d58b1f1e9f?auto=format&fit=crop&w=1200&q=80"
+  }
+}

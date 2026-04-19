@@ -1,0 +1,36 @@
+{
+  "celebrity": "A$AP Rocky",
+  "aliases": [
+    "asap rocky",
+    "a$ap rocky",
+    "rocky",
+    "rakim mayers"
+  ],
+  "article1": {
+    "name": "Graphic Knit Cardigan",
+    "style": "eclectic",
+    "color": "multi",
+    "material": "wool",
+    "productUrl": "https://www.urbanoutfitters.com/shop/hybrid/bdg-slacker-relaxed-flare-jean4?color=107&size=33W+32L&type=STANDARD&creative=&device=c&g_acctid=312-727-9506&g_adgroupid=&g_adid=&g_adtype=none&g_campaign=%5BNB+PLA+US%5D+-+PMAX+-+Mens+-+Priority&g_campaignid=20238394556&g_keyword=&g_keywordid=&g_network=x&g_type=shopping&matchtype=&network=x&utm_campaign=%5BNB+PLA+US%5D+-+PMAX+-+Mens+-+Priority&utm_content=&utm_kxconfid=vx6q4l3b6&utm_medium=cpc&utm_source=google&utm_term=&gclsrc=aw.ds&gad_source=1&gad_campaignid=20233601988&gbraid=0AAAAADpxK__W19ibqcMOLkSqgz_jtIAmO&gclid=CjwKCAjw14zPBhAuEiwAP3-Eb31DmaGWt-N8md8eT2Jjw4Bmu9Q3ZeKEtzmtkLlC3vWhaqTUk_PBSRoCQ_0QAvD_BwE",
+    "price": 690,
+    "imageUrl": "https://images.unsplash.com/photo-1617137968427-85924c800a22?auto=format&fit=crop&w=1200&q=80"
+  },
+  "article2": {
+    "name": "Tailored Cargo Trouser",
+    "style": "luxury street",
+    "color": "charcoal",
+    "material": "nylon blend",
+    "productUrl": "https://gnrmerch.com/collections/t-shirts/products/bullet-logo-oversized-tee",
+    "price": 1190,
+    "imageUrl": "https://images.unsplash.com/photo-1593032465171-8bd6ff36f0fe?auto=format&fit=crop&w=1200&q=80"
+  },
+  "article3": {
+    "name": "Chunky Derby",
+    "style": "statement",
+    "color": "black",
+    "material": "leather",
+    "productUrl": "https://www.amrikaleather.com/products/mens-axis-black-leather-bomber-jacket-with-faux-shearling?variant=47367783612712&country=US&currency=USD&utm_medium=product_sync&utm_source=google&utm_content=sag_organic&utm_campaign=sag_organic&gad_source=4&gad_campaignid=23008783674&gbraid=0AAAAAqUjMnUfo0OR3mpDFa2Y6O0LuJdOM&gclid=CjwKCAjw14zPBhAuEiwAP3-EbwetoMrPNOwWk24W0EWxuSZhYxdxBcuYBhhokZgJLr9hfphKECJQfBoCqzUQAvD_BwE",
+    "price": 1280,
+    "imageUrl": "https://images.unsplash.com/photo-1626947346165-4c2288dadc2a?auto=format&fit=crop&w=1200&q=80"
+  }
+}

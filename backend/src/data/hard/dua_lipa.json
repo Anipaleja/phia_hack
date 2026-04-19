@@ -1,0 +1,34 @@
+{
+  "celebrity": "Dua Lipa",
+  "aliases": [
+    "dua lipa",
+    "dua"
+  ],
+  "article1": {
+    "name": "Cutout Mini Dress",
+    "style": "party",
+    "color": "electric blue",
+    "material": "jersey",
+    "productUrl": "https://www.asos.com/us/noisy-may/noisy-may-high-rise-pull-on-sequin-pants-in-silver/prd/209563264#ctaref-we%20recommend%20carousel_9_discontinued&featureref1-we%20recommend%20pers",
+    "price": 1190,
+    "imageUrl": "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=1200&q=80"
+  },
+  "article2": {
+    "name": "Mesh Layer Top",
+    "style": "futuristic",
+    "color": "black",
+    "material": "mesh",
+    "productUrl": "https://www.revolve.com/superdown-robyn-strappy-back-top/dp/SPDW-WS1522/?cjdata=MXxOfDB8WXww&d=Womens&AID=15056200&PID=2299623&utm_medium=affiliate&utm_source=cj&source=cj&utm_campaign=glob_p_1994789&cjevent=50fcc7813ba111f18235025e0a82b832",
+    "price": 195,
+    "imageUrl": "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=1200&q=80"
+  },
+  "article3": {
+    "name": "Platform Boot",
+    "style": "club",
+    "color": "black",
+    "material": "patent leather",
+    "productUrl": "https://www.revolve.com/superdown-mika-button-front-dress/dp/SPDW-WD1820/?cjdata=MXxOfDB8WXww&d=Womens&AID=15056200&PID=2299623&utm_medium=affiliate&utm_source=cj&source=cj&utm_campaign=glob_p_1994789&cjevent=345c3e693ba111f1805c02490a82b82c",
+    "price": 210,
+    "imageUrl": "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=1200&q=80"
+  }
+}

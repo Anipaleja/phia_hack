@@ -1,0 +1,34 @@
+{
+  "celebrity": "Bella Hadid",
+  "aliases": [
+    "bella hadid",
+    "bella"
+  ],
+  "article1": {
+    "name": "Baby Tee",
+    "style": "y2k",
+    "color": "white",
+    "material": "cotton",
+    "productUrl": "https://www.nordstrom.com/s/amaryllis-off-the-shoulder-sweater/8087675?",
+    "price": 24,
+    "imageUrl": "https://images.unsplash.com/photo-1552902865-b72c031ac5ea?auto=format&fit=crop&w=1200&q=80"
+  },
+  "article2": {
+    "name": "Low-Rise Cargo Pant",
+    "style": "archive street",
+    "color": "khaki",
+    "material": "cotton twill",
+    "productUrl": "https://www.haaladenim.com/collections/womens-jeans/products/bella-trouser",
+    "price": 89,
+    "imageUrl": "https://images.unsplash.com/photo-1604176424472-17cd740f74e9?auto=format&fit=crop&w=1200&q=80"
+  },
+  "article3": {
+    "name": "Narrow Oval Sunglasses",
+    "style": "retro",
+    "color": "black",
+    "material": "acetate",
+    "productUrl": "https://langstore.co/products/bonnie-clyde-boyfriend-2-sunglasses?",
+    "price": 320,
+    "imageUrl": "https://images.unsplash.com/photo-1577803645773-f96470509666?auto=format&fit=crop&w=1200&q=80"
+  }
+}

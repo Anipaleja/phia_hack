@@ -1,0 +1,36 @@
+{
+  "celebrity": "Tyler, The Creator",
+  "aliases": [
+    "tyler the creator",
+    "tyler",
+    "golf wang",
+    "tyler creator"
+  ],
+  "article1": {
+    "name": "Classic Lacoste Polo",
+    "style": "colorful prep",
+    "color": "green",
+    "material": "cotton pique",
+    "productUrl": "https://www.lacoste.com/us/lacoste/men/clothing/polos/PH4012-51.html",
+    "price": 125,
+    "imageUrl": "https://images.unsplash.com/photo-1622445275576-721325763afe?auto=format&fit=crop&w=1200&q=80"
+  },
+  "article2": {
+    "name": "Loose Fit Jeans",
+    "style": "skate",
+    "color": "light wash",
+    "material": "denim",
+    "productUrl": "https://www.levis.com/US/en_US/clothing/men/jeans/loose-fit-jeans/p/005013398",
+    "price": 90,
+    "imageUrl": "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?auto=format&fit=crop&w=1200&q=80"
+  },
+  "article3": {
+    "name": "Chuck 70 High Top",
+    "style": "retro",
+    "color": "egret",
+    "material": "canvas",
+    "productUrl": "https://www.converse.com/shop/p/chuck-70-canvas-unisex-high-top-shoe/162050C.html",
+    "price": 95,
+    "imageUrl": "https://images.unsplash.com/photo-1460353581641-37baddab0fa2?auto=format&fit=crop&w=1200&q=80"
+  }
+}

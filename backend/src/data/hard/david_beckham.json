@@ -1,0 +1,35 @@
+{
+  "celebrity": "David Beckham",
+  "aliases": [
+    "david beckham",
+    "beckham",
+    "david"
+  ],
+  "article1": {
+    "name": "Cashmere Crewneck Sweater",
+    "style": "classic",
+    "color": "olive twist",
+    "material": "cashmere",
+    "productUrl": "https://www.quince.com/men/cashmere/cashmere-crewneck-sweater?color=olive-twist&size=m&g_network=g&g_productchannel=online&g_adid=796488686528&g_acctid=978-058-8398&g_keyword=&g_adtype=pla&g_keywordid=pla-2464311157086&g_ifcreative=&g_adgroupid=191610451854&g_productid=472399207152935&g_merchantid=128669708&g_partition=2464311157086&g_campaignid=23544511402&g_ifproduct=product&g_campaign=&utm_source=google&utm_medium=paid_search&utm_campaign=&utm_term=472399207152935&gad_source=1&gad_campaignid=23544511402&gbraid=0AAAAAC4ZeNbdK6audVD15r7D-QmjTiZ4o&gclid=CjwKCAjw14zPBhAuEiwAP3-Eb6AOjQLpi4JMImea1JinO3LyEOqromrHRjDg3orS2GFgA-p8x5VLlBoCsrMQAvD_BwE",
+    "price": 59.9,
+    "imageUrl": "https://images.unsplash.com/photo-1516257984-b1b4d707412e?auto=format&fit=crop&w=1200&q=80"
+  },
+  "article2": {
+    "name": "Varick Slim Straight Stretch Jean",
+    "style": "modern heritage",
+    "color": "indigo",
+    "material": "stretch denim",
+    "productUrl": "https://www.ralphlauren.com/men-clothing-jeans/varick-slim-straight-stretch-jean/480758.html",
+    "price": 128,
+    "imageUrl": "https://images.unsplash.com/photo-1604176424472-17cd740f74e9?auto=format&fit=crop&w=1200&q=80"
+  },
+  "article3": {
+    "name": "Organic Stretch Corduroy Chore Coat",
+    "style": "smart casual",
+    "color": "espresso",
+    "material": "organic cotton corduroy",
+    "productUrl": "https://www.quince.com/men/men-s-organic-stretch-corduroy-chore-coat?color=espresso&size=m&g_network=g&g_productchannel=online&g_adid=707585982701&g_acctid=978-058-8398&g_keyword=&g_adtype=pla&g_keywordid=pla-2350924223166&g_ifcreative=&g_adgroupid=165388626637&g_productid=44991827771562&g_merchantid=128669708&g_partition=2350924223166&g_campaignid=21518782508&g_ifproduct=product&g_campaign=&utm_source=google&utm_medium=paid_search&utm_campaign=&utm_term=44991827771562&gad_source=1&gad_campaignid=21518782508&gbraid=0AAAAAC4ZeNb3wpB44bMvIFSdg6LJ1sU3s&gclid=CjwKCAjw14zPBhAuEiwAP3-Eb1vPBNKUF6eX9TmZ2V8dN8S8Oba_O4fMMkE3dbzbKyVQ47MlMRIgERoCgN4QAvD_BwE",
+    "price": 79.9,
+    "imageUrl": "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=1200&q=80"
+  }
+}

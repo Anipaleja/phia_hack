@@ -5,6 +5,7 @@ import { AppError } from "../utils/errorHandler";
 import logger from "../utils/logger";
 import AIService from "./aiService";
 import AnalyticsService from "./analyticsService";
+import CelebrityStyleService from "./celebrityStyleService";
 import PriceService from "./priceService";
 import RecommendationService from "./recommendationService";
 import ShareService from "./shareService";
@@ -256,13 +257,32 @@ export class ShoppingAgentService {
       };
     }
 
-    const variants = await ShoppingAgentService.generateOutfit(prompt, budgetTier);
+    const celebrityMatch = await CelebrityStyleService.resolvePrompt(prompt);
+
+    const variants = celebrityMatch
+      ? celebrityMatch.outfitItems
+      : await ShoppingAgentService.generateOutfit(prompt, budgetTier);
+
     const summaryStats = ShoppingAgentService.calculateOutfitSummary(variants);
     const recommendations = RecommendationService.generateRecommendations(prompt);
 
+    const summary = celebrityMatch
+      ? celebrityMatch.matchType === "exact"
+        ? `Using curated ${celebrityMatch.celebrity} style picks with 3 hardcoded hero pieces.`
+        : `Using curated ${celebrityMatch.celebrity}-inspired style picks based on your request.`
+      : `Built ${summaryStats.totalItems} pieces with average ${budgetTier === "all" ? "tiered" : budgetTier} pricing.`;
+
+    if (celebrityMatch) {
+      logger.info("Celebrity style override selected", {
+        prompt,
+        matchedCelebrity: celebrityMatch.celebrity,
+        matchType: celebrityMatch.matchType,
+      });
+    }
+
     const response: OutfitResponse = {
       prompt,
-      summary: `Built ${summaryStats.totalItems} pieces with average ${budgetTier === "all" ? "tiered" : budgetTier} pricing.`,
+      summary,
       variants,
       recommendations: {
         label: "Like this style?",

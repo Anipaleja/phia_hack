@@ -1,0 +1,34 @@
+{
+  "celebrity": "Zendaya",
+  "aliases": [
+    "zendaya",
+    "zendaya coleman"
+  ],
+  "article1": {
+    "name": "Structured Oversized Blazer",
+    "style": "tailored",
+    "color": "charcoal",
+    "material": "wool",
+    "productUrl": "https://www.mrporter.com/en-us/mens/product/fear-of-god-essentials/clothing/rollnecks/logo-appliqued-cable-knit-cotton-blend-rollneck-sweater/29419655931607151?cm_mmc=PartnerizeAM-_-skimlinks_phg-_-Subaffiliate-_-305950&utm_source=partnerize&utm_medium=affiliation&utm_campaign=xq_305950&utm_content=skimlinks_phg&clickref=1101lDfpC4Kq&adj_t=19hgz889&adj_campaign=xq_305950",
+    "price": 690,
+    "imageUrl": "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=1200&q=80"
+  },
+  "article2": {
+    "name": "Satin Column Skirt",
+    "style": "minimalist",
+    "color": "espresso",
+    "material": "satin",
+    "productUrl": "https://www.aritzia.com/us/en/product/the-effortless-pant%E2%84%A2/127510021.html?utm_id=20673883861------&utm_source=google&utm_medium=cpc&gad_source=1&gad_campaignid=20664281931&gbraid=0AAAAADn95Oae3w1T7MmYGw8bNJ5aKc36x&gclid=CjwKCAjw14zPBhAuEiwAP3-EbxsAW8A9cNzpXG5qpOUvoJBBJE0FHvrHdWb3N-a4MpAjzwg4VaL7oRoCrXgQAvD_BwE",
+    "price": 395,
+    "imageUrl": "https://images.unsplash.com/photo-1554412933-514a83d2f3c8?auto=format&fit=crop&w=1200&q=80"
+  },
+  "article3": {
+    "name": "Square Toe Slingback Heel",
+    "style": "editorial",
+    "color": "black",
+    "material": "patent leather",
+    "productUrl": "https://www.on.com/en-us/products/cloudnova-moon-w-3wg1074/womens/dew-spruce-shoes-3WG10745461?utm_source=awin&utm_medium=affiliate&utm_campaign=103504-Future%20Publishing.&utm_content=0&utm_term=TechRadar&product_id=0&promotype=Editorial%20Content&awid=123518_1776568800_52951788815cf27c75684d740c9dde18&account=us&sv1=affiliate&sv_campaign_id=103504&awc=123518_1776568800_52951788815cf27c75684d740c9dde18",
+    "price": 420,
+    "imageUrl": "https://images.unsplash.com/photo-1515347619252-60a4bf4fff4f?auto=format&fit=crop&w=1200&q=80"
+  }
+}

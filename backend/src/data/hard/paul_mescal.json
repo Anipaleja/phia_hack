@@ -1,0 +1,33 @@
+{
+  "celebrity": "Paul Mescal",
+  "aliases": [
+    ""
+  ],
+  "article1": {
+    "name": "O'Neills Mourne Shorts White / Royal",
+    "style": "vintage sport",
+    "color": "White / Royal",
+    "material": "polyester",
+    "productUrl": "https://www.oneills.com/us_en/mourne-shorts-white-royal-adults-2s.html",
+    "price": 23,
+    "imageUrl": "https://hips.hearstapps.com/vader-prod.s3.amazonaws.com/1750351982-o-neills-shorts-6854405e65464.jpg?crop=1xw:1xh;center,top&resize=980:*"
+  },
+  "article2": {
+    "name": "Nike Primary Fleece",
+    "style": "Performance",
+    "color": "Dark Team Red",
+    "material": "polyester and cotton",
+    "productUrl": "https://www.nike.com/gb/t/primary-fleece-dri-fit-uv-pullover-hoodie-CnxvaR9t/FZ0969-619",
+    "price": 94.65,
+    "imageUrl": "https://hips.hearstapps.com/vader-prod.s3.amazonaws.com/1750352033-nike-hoodie-1-6854409005107.jpg?crop=1xw:1xh;center,top&resize=980:*"
+  },
+  "article3": {
+    "name": "IDEA Sorry I Don’t Work Here Cap",
+    "style": "sport",
+    "color": "white",
+    "material": "cotton",
+    "productUrl": "https://www.endclothing.com/gb/idea-sorry-i-dont-work-here-cap-ideasorrywork-bei.html?fresh=true&queryID=a978539f498476754ad8dd02ea321549",
+    "price": 52.74,
+    "imageUrl": "https://hips.hearstapps.com/vader-prod.s3.amazonaws.com/1750352211-idea-i-don-t-work-here-cap-6854414516fec.jpg?crop=1xw:1xh;center,top&resize=980:*"
+  }
+}

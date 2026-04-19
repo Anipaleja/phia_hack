@@ -1,0 +1,35 @@
+{
+  "celebrity": "Pedro Pascal",
+  "aliases": [
+    "pedro pascal",
+    "pedro",
+    "pascal"
+  ],
+  "article1": {
+    "name": "Ashby Waxed Jacket",
+    "style": "rugged classic",
+    "color": "olive",
+    "material": "waxed cotton",
+    "productUrl": "https://www.barbour.com/us/barbour-ashby-waxed-jacket",
+    "price": 400,
+    "imageUrl": "https://images.unsplash.com/photo-1617137968427-85924c800a22?auto=format&fit=crop&w=1200&q=80"
+  },
+  "article2": {
+    "name": "Pima Curved Hem Tee",
+    "style": "minimal",
+    "color": "black",
+    "material": "pima cotton",
+    "productUrl": "https://www.buckmason.com/products/black-pima-curved-hem-tee",
+    "price": 55,
+    "imageUrl": "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=1200&q=80"
+  },
+  "article3": {
+    "name": "Legend Chelsea Boot",
+    "style": "sleek",
+    "color": "black matte",
+    "material": "leather",
+    "productUrl": "https://thursdayboots.com/products/mens-legend-chelsea-boot-black-matte",
+    "price": 199,
+    "imageUrl": "https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&w=1200&q=80"
+  }
+}

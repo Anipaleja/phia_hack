@@ -25,7 +25,7 @@ type CelebrityProfile = {
 
 export type CelebrityStyleMatch = {
   celebrity: string;
-  matchType: "exact" | "closest";
+  matchType: "exact" | "closest" | "mixed";
   outfitItems: OutfitItem[];
 };
 
@@ -164,6 +164,49 @@ class CelebrityStyleService {
     }
 
     return null;
+  }
+
+  private static isMixIntent(prompt: string): boolean {
+    return /\b(mix|mixed|blend|blended|combine|combined|mashup|fusion|hybrid)\b/i.test(prompt);
+  }
+
+  private static findMentionedCelebrities(
+    prompt: string,
+    profiles: CelebrityProfile[]
+  ): CelebrityProfile[] {
+    const normalizedPrompt = CelebrityStyleService.normalizeText(prompt);
+
+    const candidates = profiles
+      .map((profile) => {
+        const aliases = [profile.celebrity, ...(profile.aliases || [])];
+        let earliestIndex = Number.POSITIVE_INFINITY;
+
+        for (const alias of aliases) {
+          const normalizedAlias = CelebrityStyleService.normalizeText(alias);
+          if (!normalizedAlias) {
+            continue;
+          }
+
+          const pattern = new RegExp(
+            `(^|\\b)${CelebrityStyleService.escapeRegex(normalizedAlias).replace(/\s+/g, "\\s+")}(\\b|$)`,
+            "i"
+          );
+
+          const match = pattern.exec(normalizedPrompt);
+          if (match && match.index < earliestIndex) {
+            earliestIndex = match.index;
+          }
+        }
+
+        return {
+          profile,
+          earliestIndex,
+        };
+      })
+      .filter((candidate) => Number.isFinite(candidate.earliestIndex))
+      .sort((left, right) => left.earliestIndex - right.earliestIndex);
+
+    return candidates.map((candidate) => candidate.profile);
   }
 
   private static isLikelyCelebrityIntent(prompt: string): boolean {
@@ -429,10 +472,71 @@ class CelebrityStyleService {
     });
   }
 
+  private static toMixedOutfitItems(profiles: CelebrityProfile[]): OutfitItem[] {
+    const articleKeys: Array<"article1" | "article2" | "article3"> = [
+      "article1",
+      "article2",
+      "article3",
+    ];
+
+    return articleKeys.map((articleKey, index) => {
+      const sourceProfile = profiles[index % profiles.length];
+      const article = sourceProfile[articleKey];
+      const pricePoint = CelebrityStyleService.toPricePoint(article);
+
+      return {
+        item: article.name,
+        style: article.style,
+        color: article.color,
+        material: article.material,
+        images: [
+          {
+            url: article.imageUrl,
+            source: "hardcoded-celebrity-mix",
+            alt: `${sourceProfile.celebrity} ${article.name}`,
+          },
+        ],
+        prices: {
+          cheap: pricePoint,
+          mid: pricePoint,
+          expensive: pricePoint,
+        },
+      };
+    });
+  }
+
   static async resolvePrompt(prompt: string): Promise<CelebrityStyleMatch | null> {
     const profiles = CelebrityStyleService.loadProfiles();
     if (profiles.length === 0) {
       return null;
+    }
+
+    const mentionedCelebrities = CelebrityStyleService.findMentionedCelebrities(
+      prompt,
+      profiles
+    );
+
+    if (
+      CelebrityStyleService.isMixIntent(prompt) &&
+      mentionedCelebrities.length >= 2
+    ) {
+      const selectedCelebrities = mentionedCelebrities.slice(0, 3);
+
+      return {
+        celebrity: selectedCelebrities
+          .map((profile) => profile.celebrity)
+          .join(" + "),
+        matchType: "mixed",
+        outfitItems: CelebrityStyleService.toMixedOutfitItems(selectedCelebrities),
+      };
+    }
+
+    if (mentionedCelebrities.length > 0) {
+      return {
+        celebrity: mentionedCelebrities[0].celebrity,
+        matchType: "exact",
+        outfitItems: CelebrityStyleService.toOutfitItems(mentionedCelebrities[0]),
+      };
     }
 
     const exact = CelebrityStyleService.findExactCelebrity(prompt, profiles);

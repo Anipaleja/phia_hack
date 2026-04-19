@@ -78,6 +78,36 @@ class CelebrityStyleService {
     );
   }
 
+  /**
+   * Curated cheaper rows may omit copy fields or use price 0 when unknown; we still list them if URLs and name are usable.
+   */
+  private static isListableCheaperOption(article: CelebrityArticle | undefined): article is CelebrityArticle {
+    if (!article) {
+      return false;
+    }
+
+    const hasHttpProductUrl = /^https?:\/\//i.test(article.productUrl || "");
+    const hasHttpImageUrl = /^https?:\/\//i.test(article.imageUrl || "");
+    const nameOk = typeof article.name === "string" && article.name.trim().length > 0;
+
+    return (
+      nameOk &&
+      Number.isFinite(article.price) &&
+      article.price >= 0 &&
+      hasHttpProductUrl &&
+      hasHttpImageUrl
+    );
+  }
+
+  private static normalizeCheaperArticle(article: CelebrityArticle): CelebrityArticle {
+    return {
+      ...article,
+      style: article.style?.trim() ?? "",
+      color: article.color?.trim() ?? "",
+      material: article.material?.trim() ?? "",
+    };
+  }
+
   private static isValidProfile(input: unknown): input is CelebrityProfile {
     if (!input || typeof input !== "object") {
       return false;
@@ -144,27 +174,74 @@ class CelebrityStyleService {
   }
 
   /**
+   * Text after the last `Follow-up:` (client sends base + follow-up in one string).
+   * Matching only on the latest segment stops a previous celebrity in `base` from
+   * stealing the pick when the user’s current line names someone else (e.g. Hailey
+   * after Bella was in the first message).
+   */
+  /** Matches `Follow-up:`, `follow up:`, etc. (client or hand-typed). */
+  private static readonly FOLLOW_UP_SPLIT = /follow(?:-|\s+)up\s*:/i;
+
+  private static latestUserSegment(prompt: string): string {
+    const parts = prompt.split(CelebrityStyleService.FOLLOW_UP_SPLIT);
+    if (parts.length <= 1) {
+      return prompt.trim();
+    }
+    return parts[parts.length - 1]!.trim();
+  }
+
+  /**
+   * Mentioned celebrities for single-celeb / exact paths: prefer matches in the latest
+   * user segment; fall back to the full prompt (e.g. follow-up "cheaper" with no name).
+   */
+  private static findMentionedCelebritiesTailFirst(
+    prompt: string,
+    profiles: CelebrityProfile[]
+  ): { profiles: CelebrityProfile[]; scope: string } {
+    const tail = CelebrityStyleService.latestUserSegment(prompt);
+    const fromTail = CelebrityStyleService.findMentionedCelebrities(tail, profiles);
+    if (fromTail.length > 0) {
+      return { profiles: fromTail, scope: tail };
+    }
+    return {
+      profiles: CelebrityStyleService.findMentionedCelebrities(prompt, profiles),
+      scope: prompt,
+    };
+  }
+
+  /**
    * Follow-up asking for cheaper / budget alternatives (IT + EN).
    * Only when the client sent a combined prompt that includes `Follow-up:` (second turn),
    * so the first message never swaps hero pieces for cheaper options by accident.
    */
   static wantsCheaperBudgetFollowUp(prompt: string): boolean {
-    if (!/follow-up\s*:/i.test(prompt)) {
+    if (!CelebrityStyleService.FOLLOW_UP_SPLIT.test(prompt)) {
       return false;
     }
 
     const lower = prompt.toLowerCase();
-    const parts = lower.split(/follow-up\s*:/i);
+    const parts = lower.split(CelebrityStyleService.FOLLOW_UP_SPLIT);
     const haystack = parts.length > 1 ? parts[parts.length - 1]!.trim() : "";
 
     const needles = [
       "cheaper",
       "cheap options",
+      "cheap option",
       "budget",
       "affordable",
       "lower price",
       "less expensive",
       "more affordable",
+      "alternative",
+      "alternatives",
+      "dupe",
+      "dupes",
+      "spend less",
+      "save money",
+      "discount",
+      "lower cost",
+      "inexpensive",
+      "economical",
       "più econom",
       "piu econom",
       "opzioni cheaper",
@@ -201,15 +278,96 @@ class CelebrityStyleService {
     return pattern.test(normalizedPrompt);
   }
 
-  private static findExactCelebrity(prompt: string, profiles: CelebrityProfile[]): CelebrityProfile | null {
-    for (const profile of profiles) {
+  /** Profiles whose celebrity name or any alias appears in the prompt. */
+  private static findProfilesWithAliasMatch(
+    prompt: string,
+    profiles: CelebrityProfile[]
+  ): CelebrityProfile[] {
+    return profiles.filter((profile) => {
       const aliases = [profile.celebrity, ...(profile.aliases || [])];
-      if (aliases.some((alias) => CelebrityStyleService.aliasMatchesPrompt(prompt, alias))) {
-        return profile;
+      return aliases.some(
+        (alias) => alias.trim().length > 0 && CelebrityStyleService.aliasMatchesPrompt(prompt, alias)
+      );
+    });
+  }
+
+  /**
+   * Latest (right-most) mention wins — fixes wrong JSON when presets/chips mention another celeb
+   * earlier in the string, or when filesystem order picked the wrong profile.
+   * Tie-break at same index: longer matched span (e.g. "hailey bieber" over "hailey").
+   */
+  private static lastMentionScore(
+    prompt: string,
+    profile: CelebrityProfile
+  ): { index: number; span: number } {
+    const normalizedPrompt = CelebrityStyleService.normalizeText(prompt);
+    const aliases = [profile.celebrity, ...(profile.aliases || [])];
+    let bestIndex = -1;
+    let bestSpan = 0;
+
+    for (const alias of aliases) {
+      const normalizedAlias = CelebrityStyleService.normalizeText(alias);
+      if (!normalizedAlias) {
+        continue;
+      }
+
+      const re = new RegExp(
+        `(^|\\b)${CelebrityStyleService.escapeRegex(normalizedAlias).replace(/\s+/g, "\\s+")}(\\b|$)`,
+        "gi"
+      );
+
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(normalizedPrompt)) !== null) {
+        const idx = m.index;
+        const span = m[0].length;
+        if (idx > bestIndex || (idx === bestIndex && span > bestSpan)) {
+          bestIndex = idx;
+          bestSpan = span;
+        }
       }
     }
 
-    return null;
+    return { index: bestIndex, span: bestSpan };
+  }
+
+  private static selectLastMentionedAmong(
+    prompt: string,
+    candidates: CelebrityProfile[]
+  ): CelebrityProfile {
+    let best: CelebrityProfile | null = null;
+    let bestIndex = -1;
+    let bestSpan = 0;
+
+    for (const profile of candidates) {
+      const { index, span } = CelebrityStyleService.lastMentionScore(prompt, profile);
+      if (index < 0) {
+        continue;
+      }
+      if (index > bestIndex || (index === bestIndex && span > bestSpan)) {
+        bestIndex = index;
+        bestSpan = span;
+        best = profile;
+      }
+    }
+
+    return best ?? candidates[0]!;
+  }
+
+  private static findExactCelebrity(prompt: string, profiles: CelebrityProfile[]): CelebrityProfile | null {
+    const tail = CelebrityStyleService.latestUserSegment(prompt);
+    let matches = CelebrityStyleService.findProfilesWithAliasMatch(tail, profiles);
+    let scope = tail;
+    if (matches.length === 0) {
+      matches = CelebrityStyleService.findProfilesWithAliasMatch(prompt, profiles);
+      scope = prompt;
+    }
+    if (matches.length === 0) {
+      return null;
+    }
+    if (matches.length === 1) {
+      return matches[0];
+    }
+    return CelebrityStyleService.selectLastMentionedAmong(scope, matches);
   }
 
   private static isMixIntent(prompt: string): boolean {
@@ -325,7 +483,9 @@ class CelebrityStyleService {
   private static buildClosestMatchPrompt(prompt: string, celebrityNames: string[]): string {
     return `You are mapping a user's fashion request to one celebrity in an approved list.\n\nApproved celebrities:\n${celebrityNames
       .map((name) => `- ${name}`)
-      .join("\n")}\n\nRules:\n1. If the user clearly mentions or implies a person not in the list, choose the closest style match from the approved list.\n2. If no person is mentioned or implied, return NONE.\n3. Return JSON only with this exact schema:\n{"closestCelebrity":"<approved name or NONE>","confidence":0.0}\n\nUser request: "${prompt}"`;
+      .join(
+        "\n"
+      )}\n\nRules:\n1. If the user names or clearly implies a specific person who IS in the list, you MUST choose that exact name — never substitute a different approved name.\n2. If the user clearly mentions a person not in the list, choose the closest style match from the approved list.\n3. If no person is mentioned or implied, return NONE.\n4. Return JSON only with this exact schema:\n{"closestCelebrity":"<approved name or NONE>","confidence":0.0}\n\nUser request: "${prompt}"`;
   }
 
   private static parseClosestCelebrityResponse(
@@ -567,16 +727,14 @@ class CelebrityStyleService {
       return null;
     }
 
-    const mentionedCelebrities = CelebrityStyleService.findMentionedCelebrities(
-      prompt,
-      profiles
-    );
+    /** Full prompt: needed so "Rihanna x Zendaya mix" sees both names even if layout varies */
+    const mentionedForMix = CelebrityStyleService.findMentionedCelebrities(prompt, profiles);
 
     if (
       CelebrityStyleService.isMixIntent(prompt) &&
-      mentionedCelebrities.length >= 2
+      mentionedForMix.length >= 2
     ) {
-      const selectedCelebrities = mentionedCelebrities.slice(0, 3);
+      const selectedCelebrities = mentionedForMix.slice(0, 3);
 
       return {
         celebrity: selectedCelebrities
@@ -587,8 +745,14 @@ class CelebrityStyleService {
       };
     }
 
+    const { profiles: mentionedCelebrities, scope: primaryScope } =
+      CelebrityStyleService.findMentionedCelebritiesTailFirst(prompt, profiles);
+
     if (mentionedCelebrities.length > 0) {
-      const primary = mentionedCelebrities[0];
+      const primary = CelebrityStyleService.selectLastMentionedAmong(
+        primaryScope,
+        mentionedCelebrities
+      );
       const cheaperMentioned = CelebrityStyleService.tryCheaperOptionsOutfit(primary, prompt);
       if (cheaperMentioned) {
         return {
@@ -653,7 +817,10 @@ class CelebrityStyleService {
     }
 
     const raw = profile.cheaperOptions ?? [];
-    const complete = raw.filter((a) => CelebrityStyleService.isCompleteArticle(a));
+    const complete = raw
+      .filter((a) => CelebrityStyleService.isListableCheaperOption(a))
+      .map((a) => CelebrityStyleService.normalizeCheaperArticle(a))
+      .slice(0, 3);
 
     if (complete.length === 0) {
       logger.info("Cheaper follow-up: no complete cheaperOptions in profile", {

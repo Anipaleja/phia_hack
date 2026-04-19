@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { ProductTileImage } from "@/components/product-tile-image";
 import type { SearchItem } from "@/lib/api";
 
 export type ChatMessageLike = {
@@ -116,24 +117,27 @@ function IconHome({ className }: { className?: string }) {
 
 function SoftProductCard({ item }: { item: SearchItem }) {
   return (
-    <article className="group rec-card-enter w-[min(100%,14rem)] shrink-0 snap-start sm:w-[min(100%,15.5rem)]">
+    <article className="group rec-card-enter flex h-full min-h-0 min-w-0 w-full max-w-full flex-col">
       <a
         href={item.productUrl}
         target="_blank"
         rel="noreferrer"
-        className="block overflow-hidden border border-[rgba(37,35,33,0.12)] bg-[#f3f0ea] transition-[transform,border-color,background-color] duration-300 ease-out hover:border-[rgba(37,35,33,0.24)] hover:bg-[#eeebe4]"
+        className="flex h-full min-h-0 flex-col overflow-hidden border border-[rgba(37,35,33,0.12)] bg-[#f3f0ea] transition-[transform,border-color,background-color] duration-300 ease-out hover:border-[rgba(37,35,33,0.24)] hover:bg-[#eeebe4]"
       >
-        <div
-          className="aspect-[4/5] bg-[#ddd8d0] bg-cover bg-center transition-transform duration-500 ease-out group-hover:scale-[1.015]"
-          style={item.imageUrl ? { backgroundImage: `url(${item.imageUrl})` } : undefined}
-        />
-        <div className="space-y-1.5 px-3.5 pb-4 pt-3.5">
+        <div className="shrink-0">
+          <ProductTileImage
+            src={item.imageUrl}
+            alt={item.title}
+            foregroundClassName="transition-transform duration-500 ease-out group-hover:scale-[1.015]"
+          />
+        </div>
+        <div className="flex min-h-0 flex-1 flex-col space-y-1.5 px-3.5 pb-4 pt-3.5">
           <p className="text-[0.62rem] font-medium uppercase tracking-[0.22em] text-stone-400">{item.store}</p>
           <h3 className="font-editorial text-[1.05rem] leading-[1.08] tracking-[-0.02em] text-stone-900">
             {item.title}
           </h3>
-          <p className="text-[0.78rem] tabular-nums text-stone-500">
-            {item.currency} {item.price}
+          <p className="mt-auto text-[0.78rem] tabular-nums text-stone-500">
+            {item.price > 0 ? `${item.currency} ${item.price}` : "See listing for price"}
           </p>
         </div>
       </a>
@@ -158,9 +162,11 @@ function LockedRecommendationsGate({
       <div className="grid grid-cols-3 gap-px bg-[rgba(37,35,33,0.12)]">
         {preview.map((item) => (
           <div key={item.id} className="relative aspect-[4/5] overflow-hidden bg-[#ddd8d0]">
-            <div
-              className="h-full w-full scale-110 bg-cover bg-center blur-md"
-              style={item.imageUrl ? { backgroundImage: `url(${item.imageUrl})` } : undefined}
+            {/* eslint-disable-next-line @next/next/no-img-element -- retailer URLs */}
+            <img
+              src={item.imageUrl || undefined}
+              alt=""
+              className="h-full w-full scale-110 object-cover object-center blur-md"
               aria-hidden
             />
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-stone-900/20 to-transparent" />
@@ -237,8 +243,8 @@ export function RecommendationExperience({
       </aside>
 
       <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border border-[rgba(37,35,33,0.12)] bg-[#f1eee8]">
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-8 sm:px-10 sm:py-11 md:px-12 md:py-14">
-          <div className="rec-surface-enter mr-auto ml-0 max-w-[48rem] text-left">
+        <div className="relative z-0 min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-8 sm:px-10 sm:py-11 md:px-12 md:py-14">
+          <div className="rec-surface-enter mr-auto ml-0 w-full min-w-0 max-w-[48rem] text-left">
             {/* 1. Query — strongest anchor */}
             {primaryQuery ? (
               <h1 className="font-editorial text-[2.15rem] leading-[0.96] tracking-[-0.04em] text-[#151515] sm:text-[2.9rem] md:text-[3.45rem]">
@@ -300,7 +306,13 @@ export function RecommendationExperience({
                       {section.title}
                     </h2>
                     <p className="mt-2 max-w-xl text-[0.88rem] leading-relaxed text-stone-500">{section.subtitle}</p>
-                    <div className="mt-9 flex gap-5 overflow-x-auto overflow-y-visible pb-2 pt-1 [scrollbar-width:thin] sm:gap-7 sm:pb-3">
+                    <div
+                      className={`mt-9 grid w-full min-w-0 items-stretch gap-4 pt-1 sm:gap-5 sm:pt-0 ${
+                        section.products.length <= 3
+                          ? "grid-cols-1 sm:grid-cols-3"
+                          : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+                      }`}
+                    >
                       {section.products.map((item) => (
                         <SoftProductCard key={item.id} item={item} />
                       ))}
@@ -312,8 +324,8 @@ export function RecommendationExperience({
           </div>
         </div>
 
-        {/* Bottom composer — continuity inside same surface */}
-        <div className="shrink-0 border-t border-[rgba(37,35,33,0.12)] bg-[#ebe7df]/94 px-5 py-5 backdrop-blur-[6px] sm:px-8 sm:py-6">
+        {/* Bottom composer — opaque bar so scrolled tiles never show through */}
+        <div className="relative z-10 shrink-0 border-t border-[rgba(37,35,33,0.12)] bg-[#ebe7df] px-5 py-5 shadow-[0_-10px_36px_rgba(24,23,21,0.06)] sm:px-8 sm:py-6">
           {composerSlot}
         </div>
       </div>

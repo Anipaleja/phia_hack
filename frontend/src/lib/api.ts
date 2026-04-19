@@ -137,6 +137,8 @@ export type SearchItem = {
 
 export type SearchResponse = {
   items: SearchItem[];
+  /** Human-readable explanation from the backend (curated celebrity vs scraped, etc.) */
+  summary?: string;
   meta: {
     query: string;
     total: number;
@@ -189,14 +191,13 @@ type BackendPricePoint = {
 };
 
 type GenerateOutfitResponse = {
+  prompt: string;
+  summary: string;
   variants: BackendOutfitItem[];
   outfit?: BackendOutfitItem[];
-  summary: {
-    totalItems: number;
-    averagePrice: unknown;
-    prompt: string;
-  };
-  created_at: string;
+  recommendations?: { label: string; items: string[] };
+  cached?: boolean;
+  created_at?: string;
 };
 
 function getStoredToken(): string | null {
@@ -288,7 +289,7 @@ export async function signup(
 
 function pickDisplayPrice(it: BackendOutfitItem): BackendPricePoint | null {
   const ordered = [it.prices.mid, it.prices.cheap, it.prices.expensive];
-  const found = ordered.find((pricePoint) => hasCompletePricePoint(pricePoint));
+  const found = ordered.find((pricePoint) => hasListableProductPrice(pricePoint));
   return found ?? null;
 }
 
@@ -313,14 +314,15 @@ function isRealImageUrl(url?: string): boolean {
   return !blockedKeywords.some((keyword) => normalized.includes(keyword));
 }
 
-function hasCompletePricePoint(price?: BackendPricePoint | null): price is BackendPricePoint {
+/** Includes price 0 for curated listings where the retailer does not expose a stable price. */
+function hasListableProductPrice(price?: BackendPricePoint | null): price is BackendPricePoint {
   if (!price) {
     return false;
   }
 
   return (
     Number.isFinite(price.price) &&
-    price.price > 0 &&
+    price.price >= 0 &&
     isRealProductUrl(price.productUrl) &&
     isRealImageUrl(price.imageUrl)
   );
@@ -342,11 +344,13 @@ export function mapOutfitToSearchItems(outfit: BackendOutfitItem[]): SearchItem[
     .map((it, index): SearchItem | null => {
       const price = pickDisplayPrice(it);
 
-      if (!hasCompletePricePoint(price)) {
+      if (!hasListableProductPrice(price)) {
         return null;
       }
 
       const store = (price.retailer || "").trim() || parseStoreFromUrl(price.productUrl);
+
+      const reasonLine = [it.style, it.color, it.material].filter(Boolean).join(" · ");
 
       return {
         id: `${it.item}-${index}`,
@@ -357,7 +361,7 @@ export function mapOutfitToSearchItems(outfit: BackendOutfitItem[]): SearchItem[
         productUrl: price.productUrl,
         store,
         score: 0.9,
-        reason: [it.style, it.color, it.material].filter(Boolean).join(" · "),
+        ...(reasonLine ? { reason: reasonLine } : {}),
       };
     })
     .filter((item): item is SearchItem => Boolean(item));
@@ -416,6 +420,7 @@ export async function searchOutfit(
 
   return {
     items,
+    summary: outfitResponse.summary,
     meta: {
       query: prompt,
       total: items.length,

@@ -1,6 +1,7 @@
 "use client";
 
 import { ChangeEvent, FormEvent, MouseEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { ProductTileImage } from "@/components/product-tile-image";
 import { deriveRecommendationLayout, RecommendationExperience } from "@/components/recommendation-experience";
 import { createPortal } from "react-dom";
 import {
@@ -50,7 +51,7 @@ const STYLE_CHAT_FORM_ID = "style-chat-form";
 
 const CHAT_HISTORY_KEY = "closer_chat_history_v1";
 const MAX_SAVED_SESSIONS = 30;
-const MIN_LOADING_MS = 5000;
+const MIN_LOADING_MS = 6000;
 const LOOKALIKE_MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const LOOKALIKE_ALLOWED_MIME_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp"]);
 
@@ -58,6 +59,7 @@ const FUNNY_LOADING_LINES = [
   "Asking a very opinionated mannequin for final approval...",
   "Steam-pressing pixels so this fit lands crisp...",
   "Cross-checking vibes against the laws of tailoring...",
+  "Mamma mia...",
   "Trying on 47 outfits in another tab. Brb...",
   "Making sure this doesn't look like your ex's Pinterest board...",
   "Summoning the style committee and muting their group chat...",
@@ -251,9 +253,11 @@ function LockedRecommendationsPreview({
       <div className="grid grid-cols-3 gap-px bg-[rgba(37,35,33,0.12)]">
         {preview.map((item) => (
           <div key={item.id} className="relative aspect-[4/5] overflow-hidden bg-[#ddd8d0]">
-            <div
-              className="h-full w-full scale-110 bg-cover bg-center blur-md"
-              style={item.imageUrl ? { backgroundImage: `url(${item.imageUrl})` } : undefined}
+            {/* eslint-disable-next-line @next/next/no-img-element -- retailer URLs */}
+            <img
+              src={item.imageUrl || undefined}
+              alt=""
+              className="h-full w-full scale-110 object-cover object-center blur-md"
               aria-hidden
             />
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-stone-900/25 to-transparent" />
@@ -313,40 +317,37 @@ function MessageBubble({
           {message.text ? <p className="text-[0.97rem] leading-[1.7]">{message.text}</p> : null}
 
           {message.products && message.products.length > 0 && (
-            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="mt-6 grid grid-cols-1 items-stretch gap-4 sm:grid-cols-3">
               {message.products.map((item) => (
                 <article
                   key={item.id}
-                  className="group overflow-hidden border border-[rgba(37,35,33,0.12)] bg-[#f3f0ea] transition-colors duration-200 hover:bg-[#efebe4]"
+                  className="group flex h-full min-h-0 flex-col overflow-hidden border border-[rgba(37,35,33,0.12)] bg-[#f3f0ea] transition-colors duration-200 hover:bg-[#efebe4]"
                 >
-                  <div
-                    className="aspect-[4/5] bg-[#ddd8d0] bg-cover bg-center transition-transform duration-300 group-hover:scale-[1.01]"
-                    style={item.imageUrl ? { backgroundImage: `url(${item.imageUrl})` } : undefined}
-                    aria-label={item.title}
-                  />
-                  <div className="space-y-2 p-4">
+                  <div className="shrink-0">
+                    <ProductTileImage src={item.imageUrl} alt={item.title} />
+                  </div>
+                  <div className="flex min-h-0 flex-1 flex-col space-y-2 p-4">
                     <p className="text-[10px] uppercase tracking-[0.18em] text-stone-500">{item.store}</p>
                     <h3 className="font-editorial text-[1.28rem] leading-[1.08] tracking-[-0.02em] text-stone-900">
                       {item.title}
                     </h3>
                     <p className="text-[0.92rem] leading-[1.55] text-stone-700">
-                      {item.currency} {item.price}
+                      {item.price > 0 ? `${item.currency} ${item.price}` : "See listing for price"}
                     </p>
-                    <p className="text-[0.86rem] leading-[1.5] text-stone-600">
-                      {item.reason ??
-                        "Works for this direction thanks to its clean silhouette and understated color balance."}
-                    </p>
+                    {item.reason ? (
+                      <p className="flex-1 text-[0.86rem] leading-[1.5] text-stone-600">{item.reason}</p>
+                    ) : null}
                     {item.productUrl ? (
                       <a
                         href={item.productUrl}
-                        className="inline-block pt-1 text-[10px] uppercase tracking-[0.14em] text-stone-900 transition-opacity duration-200 hover:opacity-70"
+                        className="mt-auto inline-block pt-1 text-[10px] uppercase tracking-[0.14em] text-stone-900 transition-opacity duration-200 hover:opacity-70"
                         target="_blank"
                         rel="noreferrer"
                       >
                         Open product page
                       </a>
                     ) : (
-                      <p className="pt-1 text-[10px] uppercase tracking-[0.14em] text-stone-500">
+                      <p className="mt-auto pt-1 text-[10px] uppercase tracking-[0.14em] text-stone-500">
                         Live product link unavailable
                       </p>
                     )}
@@ -531,7 +532,7 @@ export default function Home() {
     loadingTickerRef.current = window.setInterval(() => {
       idx = (idx + 1) % shuffled.length;
       setLoadingLine(shuffled[idx]);
-    }, 1150);
+    }, 2200);
   }
 
   async function ensureMinimumLoadingTime(startedAtMs: number) {
@@ -742,8 +743,17 @@ export default function Home() {
     const startedAtMs = Date.now();
     setLoading(true);
     startLoadingTicker();
+
+    const stopLoadingTicker = () => {
+      if (loadingTickerRef.current !== null) {
+        window.clearInterval(loadingTickerRef.current);
+        loadingTickerRef.current = null;
+      }
+    };
+
     try {
       if (!getAccessToken()) {
+        stopLoadingTicker();
         setMessages((prev) => [
           ...prev,
           {
@@ -759,11 +769,19 @@ export default function Home() {
         budgetTier: "all",
         includeHistory: true,
       });
+      const explanation =
+        response.summary?.trim() ||
+        "Here’s a set of pieces aligned with your prompt—review images and titles before buying.";
+
+      /** Show rotating lines until min time, then reveal results — avoids quips appearing under products. */
+      await ensureMinimumLoadingTime(startedAtMs);
+      stopLoadingTicker();
+
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          text: "I prioritized pieces that preserve the East Coast tailored ease, then balanced them for versatility and price coherence.",
+          text: explanation,
         },
         {
           role: "assistant",
@@ -773,6 +791,8 @@ export default function Home() {
       ]);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Request failed";
+      await ensureMinimumLoadingTime(startedAtMs);
+      stopLoadingTicker();
       setMessages((prev) => [
         ...prev,
         {
@@ -781,11 +801,6 @@ export default function Home() {
         },
       ]);
     } finally {
-      await ensureMinimumLoadingTime(startedAtMs);
-      if (loadingTickerRef.current !== null) {
-        window.clearInterval(loadingTickerRef.current);
-        loadingTickerRef.current = null;
-      }
       setLoading(false);
     }
   }
@@ -802,12 +817,19 @@ export default function Home() {
 
     setMessages((prev) => [...prev, { role: "user", text: trimmed }]);
     setInput("");
-    const composedPrompt = basePrompt
-      ? [basePrompt, trimmed].filter(Boolean).join("\nFollow-up: ")
-      : trimmed;
 
-    if (!basePrompt) {
-      setBasePrompt(trimmed);
+    const priorUserTurns = messages.filter((m) => m.role === "user");
+    const recoveredBase =
+      basePrompt.trim() || priorUserTurns[0]?.text.trim() || "";
+    const isFollowUpTurn = priorUserTurns.length >= 1;
+
+    const composedPrompt =
+      isFollowUpTurn && recoveredBase
+        ? [recoveredBase, trimmed].filter(Boolean).join("\nFollow-up: ")
+        : trimmed;
+
+    if (!basePrompt.trim()) {
+      setBasePrompt(isFollowUpTurn && recoveredBase ? recoveredBase : trimmed);
     }
 
     await runSearchWithFollowUp(composedPrompt);
@@ -871,27 +893,25 @@ export default function Home() {
             </div>
           </div>
 
-          <div className={`mt-3 flex flex-wrap gap-2 ${isLanding ? "sm:mt-3.5" : "sm:mt-3"}`}>
-            {PRESET_PROMPT_BUTTONS.map((preset) => (
-              <button
-                key={preset.label}
-                type="button"
-                disabled={loading}
-                onClick={() => applyPresetPrompt(preset.prompt)}
-                onMouseDown={(event) => {
-                  if (isLanding) event.preventDefault();
-                }}
-                className={
-                  isLanding
-                    ? "border border-[rgba(37,35,33,0.18)] bg-[#ece8e0] px-3 py-1.5 text-[10px] uppercase tracking-[0.13em] text-stone-700 transition hover:border-[rgba(37,35,33,0.3)] hover:bg-[#e7e2da] disabled:cursor-not-allowed disabled:opacity-45"
-                    : "border border-[rgba(37,35,33,0.14)] bg-[#efebe3] px-2.5 py-1.5 text-[10px] uppercase tracking-[0.12em] text-stone-600 transition hover:border-[rgba(37,35,33,0.26)] hover:text-stone-800 disabled:cursor-not-allowed disabled:opacity-40"
-                }
-                aria-label={`Use preset prompt: ${preset.label}`}
-              >
-                {preset.label}
-              </button>
-            ))}
-          </div>
+          {isLanding && !hasConversationStarted ? (
+            <div className="mt-3 flex flex-wrap gap-2 sm:mt-3.5">
+              {PRESET_PROMPT_BUTTONS.map((preset) => (
+                <button
+                  key={preset.label}
+                  type="button"
+                  disabled={loading}
+                  onClick={() => applyPresetPrompt(preset.prompt)}
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                  }}
+                  className="border border-[rgba(37,35,33,0.18)] bg-[#ece8e0] px-3 py-1.5 text-[10px] uppercase tracking-[0.13em] text-stone-700 transition hover:border-[rgba(37,35,33,0.3)] hover:bg-[#e7e2da] disabled:cursor-not-allowed disabled:opacity-45"
+                  aria-label={`Use preset prompt: ${preset.label}`}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
       </div>
     );
@@ -1251,10 +1271,6 @@ export default function Home() {
                 <h1 className="hero-enter-2 font-editorial mt-5 max-w-[9.5ch] text-[3.15rem] leading-[0.94] tracking-[-0.045em] text-stone-900 sm:text-[4.3rem] lg:text-[5.35rem] xl:text-[6rem]">
                   Turn a style icon into a wardrobe worth wearing.
                 </h1>
-                <p className="hero-enter-3 mt-5 max-w-[31rem] text-[0.9rem] leading-[1.6] text-stone-600 sm:text-[0.94rem]">
-                  Name the person, era, or cultural reference. We translate the signal into real pieces you
-                  can shop without flattening the point of view.
-                </p>
               </div>
 
               {chatHistory.length > 0 && !isLandingComposerCentered ? (
@@ -1328,7 +1344,10 @@ export default function Home() {
         >
           {isFollowUpThread ? (
             <>
-              <div ref={followUpThreadScrollRef} className="min-h-0 flex-1 overflow-y-auto pb-44 pr-1 pt-2">
+              <div
+                ref={followUpThreadScrollRef}
+                className="relative z-0 min-h-0 flex-1 overflow-y-auto pb-[min(42vh,13rem)] pr-1 pt-2"
+              >
                 <div className="mx-auto flex w-full max-w-4xl flex-col gap-7">
                   {messages.map((message, index) => (
                     <MessageBubble
@@ -1349,7 +1368,7 @@ export default function Home() {
                   )}
                 </div>
               </div>
-              <div className="absolute inset-x-0 bottom-0 bg-[linear-gradient(to_top,#f1eee8_68%,transparent)] px-6 pb-8 pt-5">
+              <div className="absolute inset-x-0 bottom-0 z-10 border-t border-[rgba(37,35,33,0.1)] bg-[#f1eee8] px-6 pb-8 pt-5 shadow-[0_-10px_36px_rgba(24,23,21,0.07)]">
                 <div className="mx-auto w-full max-w-4xl">{composer("surface")}</div>
               </div>
             </>

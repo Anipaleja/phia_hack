@@ -18,9 +18,7 @@ The product focuses on keeping this loop fast and understandable rather than try
 
 Add your product screenshot here.
 
-```md
 ![Closer product screenshot](./docs/gallery.jpg)
-```
 
 ## How It Works (High Level)
 

@@ -3,9 +3,117 @@
  * Backend: Express on PORT (default 3001). See backend/api_test.md.
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+/**
+ * When empty, requests use same-origin paths (/api/..., /health) and Next.js rewrites
+ * them to Express (see next.config.ts). Set NEXT_PUBLIC_API_URL only if the API is on another origin.
+ */
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/$/, "");
 
 export const SESSION_TOKEN_KEY = "closer_access_token";
+
+/** Exposed for debugging connection issues in the UI if needed */
+export function getApiBaseUrl(): string {
+  return API_BASE_URL || "(same origin — proxied to backend)";
+}
+
+function apiUrl(path: string): string {
+  const p = path.startsWith("/") ? path : `/${path}`;
+  return API_BASE_URL ? `${API_BASE_URL}${p}` : p;
+}
+
+async function parseJsonSafe(response: Response): Promise<unknown> {
+  const text = await response.text();
+  if (!text.trim()) return {};
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    return {
+      _nonJsonBody: true,
+      _preview: text.slice(0, 280),
+    };
+  }
+}
+
+function formatErrorDetails(details: unknown): string | null {
+  if (details == null) return null;
+  if (typeof details === "string") return details.trim() || null;
+  if (Array.isArray(details)) {
+    const parts = details
+      .map((x) => {
+        if (typeof x === "string") return x;
+        if (x && typeof x === "object" && "message" in x) return String((x as { message: unknown }).message);
+        return JSON.stringify(x);
+      })
+      .filter(Boolean);
+    return parts.length ? parts.join(" ") : null;
+  }
+  if (typeof details === "object") {
+    return Object.entries(details as Record<string, unknown>)
+      .map(([k, v]) => `${k}: ${typeof v === "string" ? v : JSON.stringify(v)}`)
+      .join(". ");
+  }
+  return null;
+}
+
+/**
+ * Reads backend `{ error: { message, code, details } }`, plain `message`, or similar shapes.
+ */
+export function extractApiErrorMessage(body: unknown, response: Response): string {
+  const status = response.status;
+  const statusText = (response.statusText || "").trim();
+  const fallback = statusText ? `${statusText} (${status})` : `Request failed (${status})`;
+
+  if (body && typeof body === "object") {
+    const b = body as Record<string, unknown>;
+    if (b._nonJsonBody === true && typeof b._preview === "string") {
+      if (status === 404) {
+        return `Got 404 (HTML, not the API). Usually: (1) Restart the frontend after changing next.config or .env. (2) Do not set NEXT_PUBLIC_API_URL to the Next dev URL (e.g. :3000)—use unset/empty for the proxy, or use http://localhost:3001. (3) Run the backend on the port in BACKEND_PROXY_TARGET (default 127.0.0.1:3001).`;
+      }
+      return `Server returned ${status} with a non-JSON body. If you use the dev proxy, restart Next; if you call the API directly, set NEXT_PUBLIC_API_URL to the Express origin.`;
+    }
+
+    const err = b.error;
+    if (err && typeof err === "object" && err !== null) {
+      const e = err as Record<string, unknown>;
+      if (typeof e.message === "string" && e.message.trim()) {
+        const base = e.message.trim();
+        const extra = formatErrorDetails(e.details);
+        return extra ? `${base} (${extra})` : base;
+      }
+      const fromDetails = formatErrorDetails(e.details);
+      if (fromDetails) return fromDetails;
+    }
+
+    if (typeof b.message === "string" && b.message.trim()) {
+      return b.message.trim();
+    }
+  }
+
+  return fallback;
+}
+
+function isLikelyNetworkFailure(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  return /failed to fetch|networkerror|load failed|network request failed/i.test(error.message);
+}
+
+function apiNetworkErrorMessage(): string {
+  if (API_BASE_URL) {
+    return `Cannot reach the API at ${API_BASE_URL}. Start the backend (\`cd backend && npm run dev\`), fix NEXT_PUBLIC_API_URL if the port differs, and ensure CORS allows this site.`;
+  }
+  return `Cannot reach the API. Start Express on port 3001 (\`cd backend && npm run dev\`). With NEXT_PUBLIC_API_URL unset, Next proxies /api and /health—see frontend/next.config.ts (BACKEND_PROXY_TARGET). Restart the frontend dev server after env changes.`;
+}
+
+async function fetchJsonOrThrow(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  try {
+    return await fetch(input, init);
+  } catch (e) {
+    if (isLikelyNetworkFailure(e)) {
+      throw new Error(apiNetworkErrorMessage());
+    }
+    throw e;
+  }
+}
 
 export type SearchRequest = {
   query: string;
@@ -99,7 +207,7 @@ export function getAccessToken(): string | null {
  * GET /health (not under /api)
  */
 export async function getHealth(): Promise<HealthStatus> {
-  const response = await fetch(`${API_BASE_URL}/health`, { cache: "no-store" });
+  const response = await fetchJsonOrThrow(apiUrl("/health"), { cache: "no-store" });
   if (!response.ok) {
     throw new Error("Backend health check failed");
   }
@@ -115,18 +223,16 @@ export type LoginResult = {
  * POST /api/auth/login
  */
 export async function login(email: string, password: string): Promise<LoginResult> {
-  const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+  const response = await fetchJsonOrThrow(apiUrl("/api/auth/login"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
 
-  const data = await response.json().catch(() => ({}));
+  const data = (await parseJsonSafe(response)) as Record<string, unknown>;
 
   if (!response.ok) {
-    const message =
-      data?.error?.message ?? data?.message ?? `Login failed (${response.status})`;
-    throw new Error(message);
+    throw new Error(extractApiErrorMessage(data, response));
   }
 
   const token = data.token as string | undefined;
@@ -135,7 +241,7 @@ export async function login(email: string, password: string): Promise<LoginResul
   }
 
   setStoredToken(token);
-  return { token, refreshToken: data.refreshToken };
+  return { token, refreshToken: data.refreshToken as string | undefined };
 }
 
 /**
@@ -146,7 +252,7 @@ export async function signup(
   password: string,
   fullName?: string
 ): Promise<{ message: string }> {
-  const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
+  const response = await fetchJsonOrThrow(apiUrl("/api/auth/signup"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -156,12 +262,10 @@ export async function signup(
     }),
   });
 
-  const data = await response.json().catch(() => ({}));
+  const data = (await parseJsonSafe(response)) as Record<string, unknown>;
 
   if (!response.ok) {
-    const message =
-      data?.error?.message ?? data?.message ?? `Registration failed (${response.status})`;
-    throw new Error(message);
+    throw new Error(extractApiErrorMessage(data, response));
   }
 
   return { message: (data.message as string) ?? "Account created" };
@@ -261,7 +365,7 @@ export async function searchOutfit(
     throw new Error("Not signed in");
   }
 
-  const response = await fetch(`${API_BASE_URL}/api/outfits/search`, {
+  const response = await fetchJsonOrThrow(apiUrl("/api/outfits/search"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -274,7 +378,7 @@ export async function searchOutfit(
     }),
   });
 
-  const data = (await response.json().catch(() => ({}))) as
+  const data = (await parseJsonSafe(response)) as
     | GenerateOutfitResponse
     | { error?: { message?: string; code?: string } };
 
@@ -282,10 +386,7 @@ export async function searchOutfit(
     if (response.status === 401) {
       clearStoredToken();
     }
-    const message =
-      (data as { error?: { message?: string } }).error?.message ??
-      `Outfit search failed (${response.status})`;
-    throw new Error(message);
+    throw new Error(extractApiErrorMessage(data, response));
   }
 
   const outfitResponse = data as GenerateOutfitResponse;

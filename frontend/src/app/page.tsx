@@ -52,7 +52,7 @@ const STYLE_CHAT_FORM_ID = "style-chat-form";
 
 const CHAT_HISTORY_KEY = "closer_chat_history_v1";
 const MAX_SAVED_SESSIONS = 30;
-const MIN_LOADING_MS = 6000;
+const MIN_LOADING_MS = 10000;
 const LOOKALIKE_MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const LOOKALIKE_ALLOWED_MIME_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp"]);
 
@@ -420,6 +420,86 @@ function firstUserPreview(messages: ChatMessage[]): string {
   return text.length > 72 ? `${text.slice(0, 72)}…` : text;
 }
 
+type SharePayload = {
+  title: string;
+  text: string;
+};
+
+function buildStylistSharePayload(messages: ChatMessage[]): SharePayload | null {
+  let productMessageIndex = -1;
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    if (messages[index].products && messages[index].products!.length > 0) {
+      productMessageIndex = index;
+      break;
+    }
+  }
+
+  if (productMessageIndex < 0) {
+    return null;
+  }
+
+  const productMessage = messages[productMessageIndex];
+  const products = productMessage.products || [];
+  if (products.length === 0) {
+    return null;
+  }
+
+  const priorMessages = messages.slice(0, productMessageIndex);
+  const latestPrompt = [...priorMessages]
+    .reverse()
+    .find((message) => message.role === "user" && message.text.trim())
+    ?.text.trim();
+  const latestAssistantSummary = [...priorMessages]
+    .reverse()
+    .find((message) => message.role === "assistant" && message.text.trim())
+    ?.text.trim();
+
+  const lines: string[] = ["Closer.ai outfit outputs"];
+  if (latestPrompt) {
+    lines.push(`Prompt: ${latestPrompt}`);
+  }
+  if (latestAssistantSummary) {
+    lines.push(`Summary: ${latestAssistantSummary}`);
+  }
+
+  lines.push("", "Picks:");
+
+  products.slice(0, 8).forEach((item, index) => {
+    const priceText = item.price > 0 ? `${item.currency} ${item.price}` : "Price on listing";
+    const linkText = item.productUrl && item.productUrl !== "#" ? item.productUrl : "Link unavailable";
+    lines.push(`${index + 1}. ${item.title} (${item.store}) — ${priceText}`);
+    lines.push(`   ${linkText}`);
+  });
+
+  return {
+    title: "Closer outfit outputs",
+    text: lines.join("\n"),
+  };
+}
+
+function buildLookalikeSharePayload(result: CelebrityLookalikeResponse): SharePayload {
+  const lines: string[] = [
+    "Closer.ai celebrity lookalike result",
+    `Closest match: ${result.closestCelebrity}`,
+    `Confidence: ${toConfidencePercent(result.confidence)}`,
+    "",
+    "Top matches:",
+  ];
+
+  result.topMatches.slice(0, 5).forEach((match, index) => {
+    lines.push(`${index + 1}. ${match.celebrity} (${toConfidencePercent(match.confidence)})`);
+  });
+
+  if (result.note?.trim()) {
+    lines.push("", result.note.trim());
+  }
+
+  return {
+    title: "Closer lookalike result",
+    text: lines.join("\n"),
+  };
+}
+
 export default function Home() {
   const [activeTopTab, setActiveTopTab] = useState<"stylist" | "lookalike">("stylist");
   const [input, setInput] = useState("");
@@ -442,6 +522,7 @@ export default function Home() {
   const [lookalikeResult, setLookalikeResult] = useState<CelebrityLookalikeResponse | null>(null);
   const [lookalikeError, setLookalikeError] = useState<string | null>(null);
   const [lookalikeLoading, setLookalikeLoading] = useState(false);
+  const [shareNotice, setShareNotice] = useState<string | null>(null);
   const [chatHistory, setChatHistory] = useState<SavedChatSession[]>([]);
   const sessionIdRef = useRef<string | null>(null);
   const landingComposerRef = useRef<HTMLTextAreaElement | null>(null);
@@ -450,6 +531,7 @@ export default function Home() {
   const [landingComposerFocused, setLandingComposerFocused] = useState(false);
   const [clientMounted, setClientMounted] = useState(false);
   const loadingTickerRef = useRef<number | null>(null);
+  const shareNoticeTimeoutRef = useRef<number | null>(null);
 
   const hasConversationStarted = messages.some((message) => message.role === "user");
   /** Center composer only for the very first prompt on landing (never on follow-ups). */
@@ -458,6 +540,16 @@ export default function Home() {
 
   const recLayout = useMemo(() => deriveRecommendationLayout(messages), [messages]);
   const isFollowUpThread = recLayout.followUpQueries.length > 0;
+  const stylistSharePayload = useMemo(() => buildStylistSharePayload(messages), [messages]);
+  const lookalikeSharePayload = useMemo(
+    () => (lookalikeResult ? buildLookalikeSharePayload(lookalikeResult) : null),
+    [lookalikeResult]
+  );
+  const activeSharePayload = activeTopTab === "lookalike" ? lookalikeSharePayload : stylistSharePayload;
+  const canShareOutputs = Boolean(activeSharePayload);
+  const showShareAction =
+    canShareOutputs &&
+    ((activeTopTab === "stylist" && !loading) || (activeTopTab === "lookalike" && !lookalikeLoading));
 
   useEffect(() => {
     // Hydrate auth state from sessionStorage after mount (avoids SSR/client mismatch).
@@ -478,6 +570,9 @@ export default function Home() {
     return () => {
       if (loadingTickerRef.current !== null) {
         window.clearInterval(loadingTickerRef.current);
+      }
+      if (shareNoticeTimeoutRef.current !== null) {
+        window.clearTimeout(shareNoticeTimeoutRef.current);
       }
     };
   }, []);
@@ -659,6 +754,74 @@ export default function Home() {
           // selection not supported for this input type in some environments
         }
       });
+    }
+  }
+
+  function publishShareNotice(message: string) {
+    setShareNotice(message);
+
+    if (shareNoticeTimeoutRef.current !== null) {
+      window.clearTimeout(shareNoticeTimeoutRef.current);
+      shareNoticeTimeoutRef.current = null;
+    }
+
+    shareNoticeTimeoutRef.current = window.setTimeout(() => {
+      setShareNotice(null);
+      shareNoticeTimeoutRef.current = null;
+    }, 2800);
+  }
+
+  async function handleShareOutputs() {
+    if (!activeSharePayload) {
+      return;
+    }
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const payload = activeSharePayload;
+    const nav = window.navigator as Navigator & {
+      clipboard?: Clipboard;
+      share?: (data: ShareData) => Promise<void>;
+    };
+
+    try {
+      if (typeof nav.share === "function") {
+        await nav.share({
+          title: payload.title,
+          text: payload.text,
+        });
+        publishShareNotice("Output shared.");
+        return;
+      }
+
+      if (nav.clipboard?.writeText) {
+        await nav.clipboard.writeText(payload.text);
+        publishShareNotice("Share text copied.");
+        return;
+      }
+
+      throw new Error("Share unavailable");
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") {
+        return;
+      }
+
+      try {
+        const fallback = document.createElement("textarea");
+        fallback.value = payload.text;
+        fallback.setAttribute("readonly", "true");
+        fallback.style.position = "absolute";
+        fallback.style.left = "-9999px";
+        document.body.appendChild(fallback);
+        fallback.select();
+        document.execCommand("copy");
+        document.body.removeChild(fallback);
+        publishShareNotice("Share text copied.");
+      } catch {
+        publishShareNotice("Could not share right now.");
+      }
     }
   }
 
@@ -1402,6 +1565,24 @@ export default function Home() {
         </section>
       </form>
       )}
+
+      {showShareAction ? (
+        <div className="pointer-events-none fixed bottom-[max(0.85rem,env(safe-area-inset-bottom,0px))] right-4 z-[90] flex flex-col items-end gap-2 sm:bottom-[max(1rem,env(safe-area-inset-bottom,0px))] sm:right-6">
+          {shareNotice ? (
+            <p className="pointer-events-auto border border-[rgba(37,35,33,0.12)] bg-[#ece8e0] px-3 py-1.5 text-[10px] uppercase tracking-[0.16em] text-stone-700 shadow-[0_8px_22px_rgba(24,23,21,0.09)]">
+              {shareNotice}
+            </p>
+          ) : null}
+          <button
+            type="button"
+            onClick={handleShareOutputs}
+            className="pointer-events-auto border border-[rgba(37,35,33,0.16)] bg-[#ece8e0] px-3.5 py-2 text-[10px] uppercase tracking-[0.18em] text-stone-800 shadow-[0_10px_24px_rgba(24,23,21,0.1)] transition hover:border-[rgba(37,35,33,0.28)]"
+            aria-label="Share latest outputs"
+          >
+            Share outputs
+          </button>
+        </div>
+      ) : null}
     </main>
   );
 }

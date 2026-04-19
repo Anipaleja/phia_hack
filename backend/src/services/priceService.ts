@@ -31,6 +31,29 @@ export class PriceService {
       : 25000;
   }
 
+  /**
+   * Listing images must be real remote URLs so downstream UI can show product photos.
+   * Applied to scraped (and cached scrape) results before price sorting / tier picks.
+   */
+  private static hasListingImage(imageUrl: string | undefined): boolean {
+    if (!imageUrl || typeof imageUrl !== "string") return false;
+    const t = imageUrl.trim();
+    if (!t || t.startsWith("data:")) return false;
+    return /^https?:\/\//i.test(t);
+  }
+
+  private static filterPricePointsWithImages(points: PricePoint[]): PricePoint[] {
+    return points.filter((p) => PriceService.hasListingImage(p.imageUrl));
+  }
+
+  /**
+   * Used when assembling outfits: cheap/mid/expensive must be chosen only from
+   * listings that include a real product image (same rule as the scrape filter).
+   */
+  static pricePointHasListingPhoto(p: PricePoint): boolean {
+    return PriceService.hasListingImage(p.imageUrl);
+  }
+
   private static buildMockPrices(itemName: string, searchQuery: string): PricePoint[] {
     const seed = `${itemName}:${searchQuery}`
       .split("")
@@ -200,6 +223,16 @@ export class PriceService {
             const linkEl = elem.querySelector("a");
 
             if (nameEl && priceEl && linkEl) {
+              const img = elem.querySelector("img") as HTMLImageElement | null;
+              const rawSrc = img?.src?.trim() || "";
+              if (
+                !rawSrc ||
+                rawSrc.startsWith("data:") ||
+                !/^https?:\/\//i.test(rawSrc)
+              ) {
+                return;
+              }
+
               const priceText = priceEl.getAttribute("aria-label") || "";
               const priceMatch = priceText.match(/\$[\d,]+\.?\d*/);
               const price = priceMatch
@@ -213,7 +246,7 @@ export class PriceService {
                   currency: "USD",
                   retailer: new URL(linkEl.href).hostname.replace("www.", ""),
                   productUrl: linkEl.href || "",
-                  imageUrl: elem.querySelector("img")?.src,
+                  imageUrl: rawSrc,
                   rating: undefined,
                 });
               }
@@ -226,12 +259,17 @@ export class PriceService {
         return items;
       });
 
+      const withImages = PriceService.filterPricePointsWithImages(products);
+      const dropped = products.length - withImages.length;
+
       logger.info("Google Shopping scrape successful", {
         query,
-        resultCount: products.length,
+        resultCount: withImages.length,
+        rawCount: products.length,
+        droppedNoImage: dropped,
       });
 
-      return products.slice(0, 10); // Return top 10 results
+      return withImages.slice(0, 10);
     } catch (error) {
       const errorMsg =
         error instanceof Error ? error.message : String(error);
@@ -264,11 +302,16 @@ export class PriceService {
     const searchQuery = `${color} ${itemName} ${style}`.toLowerCase().trim();
     const cacheKey = `prices:${searchQuery}`;
 
-    // Check cache first
+    // Check cache first (only entries with listing images are usable)
     const cached = priceCache.get<PricePoint[]>(cacheKey);
     if (cached && cached.length > 0) {
-      logger.debug("Price cache hit", { query: searchQuery });
-      return PriceService.formatPriceResult(itemName, searchQuery, cached);
+      const cachedWithImages = PriceService.filterPricePointsWithImages(cached);
+      if (cachedWithImages.length > 0) {
+        logger.debug("Price cache hit", { query: searchQuery });
+        return PriceService.formatPriceResult(itemName, searchQuery, cachedWithImages);
+      }
+      priceCache.del(cacheKey);
+      logger.debug("Price cache invalidated (no listing images)", { query: searchQuery });
     }
 
     try {

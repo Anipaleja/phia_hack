@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import type { SearchItem } from "@/lib/api";
+import { isHttpProductUrl, type SearchItem } from "@/lib/api";
 
 export type ChatMessageLike = {
   role: "assistant" | "user";
@@ -115,28 +115,49 @@ function IconHome({ className }: { className?: string }) {
 }
 
 function SoftProductCard({ item }: { item: SearchItem }) {
+  const canLink = isHttpProductUrl(item.productUrl);
+  const shellClass =
+    "block overflow-hidden border border-[rgba(37,35,33,0.12)] bg-[#f3f0ea] transition-[transform,border-color,background-color] duration-300 ease-out " +
+    (canLink
+      ? "hover:border-[rgba(37,35,33,0.24)] hover:bg-[#eeebe4] cursor-pointer"
+      : "cursor-default");
+
+  const inner = (
+    <>
+      <div
+        className="aspect-[4/5] bg-[#ddd8d0] bg-cover bg-center transition-transform duration-500 ease-out group-hover:scale-[1.015]"
+        style={item.imageUrl ? { backgroundImage: `url(${item.imageUrl})` } : undefined}
+      />
+      <div className="space-y-1.5 px-3.5 pb-4 pt-3.5">
+        <p className="text-[0.62rem] font-medium uppercase tracking-[0.22em] text-stone-500">{item.store}</p>
+        <h3 className="font-editorial text-[1.02rem] leading-[1.12] tracking-[-0.02em] text-stone-900 line-clamp-3">
+          {item.title}
+        </h3>
+        {item.slotLabel ? (
+          <p className="text-[0.68rem] leading-snug text-stone-500 line-clamp-2">{item.slotLabel}</p>
+        ) : null}
+        <p className="text-[0.8rem] tabular-nums text-stone-800">
+          {item.currency} {item.price.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+        </p>
+        {item.websiteHost ? (
+          <p className="text-[0.68rem] leading-snug text-stone-500">{item.websiteHost}</p>
+        ) : null}
+        {canLink ? (
+          <p className="text-[0.62rem] uppercase tracking-[0.18em] text-stone-400">Open listing</p>
+        ) : null}
+      </div>
+    </>
+  );
+
   return (
-    <article className="group rec-card-enter w-[min(100%,14rem)] shrink-0 snap-start sm:w-[min(100%,15.5rem)]">
-      <a
-        href={item.productUrl}
-        target="_blank"
-        rel="noreferrer"
-        className="block overflow-hidden border border-[rgba(37,35,33,0.12)] bg-[#f3f0ea] transition-[transform,border-color,background-color] duration-300 ease-out hover:border-[rgba(37,35,33,0.24)] hover:bg-[#eeebe4]"
-      >
-        <div
-          className="aspect-[4/5] bg-[#ddd8d0] bg-cover bg-center transition-transform duration-500 ease-out group-hover:scale-[1.015]"
-          style={item.imageUrl ? { backgroundImage: `url(${item.imageUrl})` } : undefined}
-        />
-        <div className="space-y-1.5 px-3.5 pb-4 pt-3.5">
-          <p className="text-[0.62rem] font-medium uppercase tracking-[0.22em] text-stone-400">{item.store}</p>
-          <h3 className="font-editorial text-[1.05rem] leading-[1.08] tracking-[-0.02em] text-stone-900">
-            {item.title}
-          </h3>
-          <p className="text-[0.78rem] tabular-nums text-stone-500">
-            {item.currency} {item.price}
-          </p>
-        </div>
-      </a>
+    <article className="group rec-card-enter w-[min(100%,15rem)] shrink-0 snap-start sm:w-[min(100%,16.5rem)]">
+      {canLink ? (
+        <a href={item.productUrl} target="_blank" rel="noreferrer" className={shellClass}>
+          {inner}
+        </a>
+      ) : (
+        <div className={shellClass}>{inner}</div>
+      )}
     </article>
   );
 }

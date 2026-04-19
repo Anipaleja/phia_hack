@@ -5,7 +5,6 @@ import { AppError } from "../utils/errorHandler";
 import logger from "../utils/logger";
 import AIService from "./aiService";
 import AnalyticsService from "./analyticsService";
-import ImageService from "./imageService";
 import PriceService from "./priceService";
 import RecommendationService from "./recommendationService";
 import ShareService from "./shareService";
@@ -91,10 +90,13 @@ export class ShoppingAgentService {
         ).length,
       });
 
-      // Step 3: Combine into outfit items with 3-tier pricing and listing images
+      // Step 3: Combine into outfit items with 3-tier pricing and listing images only.
+      // Tier picks (cheap/mid/expensive) consider only price points that include a product photo.
       const outfitItems: OutfitItem[] = styleItems.map((style, index) => {
         const priceData = priceResults[index];
-        const pricePoints = priceData?.pricePoints || [];
+        const pricePoints = (priceData?.pricePoints || []).filter((p) =>
+          PriceService.pricePointHasListingPhoto(p)
+        );
 
         // Select prices based on budget tier
         let cheapPrice: PricePoint | null = null;
@@ -157,33 +159,29 @@ export class ShoppingAgentService {
         };
       });
 
-      const missingImageEntries = outfitItems
-        .map((outfitItem, index) => ({ outfitItem, index }))
-        .filter(({ outfitItem }) => outfitItem.images.length === 0);
+      const withListingPhotos = outfitItems.filter((o) => o.images.length > 0);
 
-      if (missingImageEntries.length > 0) {
-        const fallbackImages = await ImageService.getImagesForItems(
-          missingImageEntries.map(({ outfitItem }) => ({
-            item: outfitItem.item,
-            style: outfitItem.style,
-            color: outfitItem.color,
-          }))
+      if (withListingPhotos.length === 0) {
+        throw new AppError(
+          "No products with listing photos were found. Try a different search.",
+          "NO_LISTING_PHOTOS",
+          422
         );
+      }
 
-        fallbackImages.forEach((fallback, fallbackIndex) => {
-          const targetIndex = missingImageEntries[fallbackIndex]?.index;
-
-          if (typeof targetIndex === "number") {
-            outfitItems[targetIndex].images = fallback.images;
-          }
+      const dropped = outfitItems.length - withListingPhotos.length;
+      if (dropped > 0) {
+        logger.info("Dropped outfit slots without listing product image", {
+          dropped,
+          kept: withListingPhotos.length,
         });
       }
 
       logger.info("Outfit generation complete", {
-        itemCount: outfitItems.length,
+        itemCount: withListingPhotos.length,
       });
 
-      return outfitItems;
+      return withListingPhotos;
     } catch (error) {
       if (error instanceof AppError) {
         throw error;

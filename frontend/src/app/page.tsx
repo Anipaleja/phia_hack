@@ -8,6 +8,7 @@ import {
   SESSION_TOKEN_KEY,
   clearStoredToken,
   getAccessToken,
+  isHttpProductUrl,
   login,
   searchOutfit,
   signup,
@@ -38,45 +39,53 @@ const EXAMPLE_PRODUCTS: SearchItem[] = [
   {
     id: "example-shirt-1",
     title: "Washed Oxford Shirt",
+    slotLabel: "Shirt",
     price: 118,
     currency: "USD",
     imageUrl:
       "https://images.unsplash.com/photo-1603252109303-2751441dd157?auto=format&fit=crop&w=900&q=80",
-    productUrl: "#",
+    productUrl: "https://www.jcrew.com",
     store: "J.Crew",
+    websiteHost: "jcrew.com",
     score: 0.91,
   },
   {
     id: "example-trousers-1",
     title: "Pleated Cotton Chinos",
+    slotLabel: "Trousers",
     price: 135,
     currency: "USD",
     imageUrl:
       "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?auto=format&fit=crop&w=900&q=80",
-    productUrl: "#",
+    productUrl: "https://www.brooksbrothers.com",
     store: "Brooks Brothers",
+    websiteHost: "brooksbrothers.com",
     score: 0.88,
   },
   {
     id: "example-shoes-1",
     title: "Leather Penny Loafers",
+    slotLabel: "Shoes",
     price: 149,
     currency: "USD",
     imageUrl:
       "https://images.unsplash.com/photo-1614252369475-531eba835eb1?auto=format&fit=crop&w=900&q=80",
-    productUrl: "#",
+    productUrl: "https://www.ghbass.com",
     store: "G.H. Bass",
+    websiteHost: "ghbass.com",
     score: 0.9,
   },
   {
     id: "example-layer-1",
     title: "Navy Unstructured Blazer",
+    slotLabel: "Layer",
     price: 160,
     currency: "USD",
     imageUrl:
       "https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?auto=format&fit=crop&w=900&q=80",
-    productUrl: "#",
+    productUrl: "https://www.ralphlauren.com",
     store: "Polo Ralph Lauren",
+    websiteHost: "ralphlauren.com",
     score: 0.87,
   },
 ];
@@ -251,39 +260,58 @@ function MessageBubble({
 
           {message.products && message.products.length > 0 && (
             <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-              {message.products.map((item) => (
-                <article
-                  key={item.id}
-                  className="group overflow-hidden border border-[rgba(37,35,33,0.12)] bg-[#f3f0ea] transition-colors duration-200 hover:bg-[#efebe4]"
-                >
-                  <div
-                    className="aspect-[4/5] bg-[#ddd8d0] bg-cover bg-center transition-transform duration-300 group-hover:scale-[1.01]"
-                    style={item.imageUrl ? { backgroundImage: `url(${item.imageUrl})` } : undefined}
-                    aria-label={item.title}
-                  />
-                  <div className="space-y-2 p-4">
-                    <p className="text-[10px] uppercase tracking-[0.18em] text-stone-500">{item.store}</p>
-                    <h3 className="font-editorial text-[1.28rem] leading-[1.08] tracking-[-0.02em] text-stone-900">
-                      {item.title}
-                    </h3>
-                    <p className="text-[0.92rem] leading-[1.55] text-stone-700">
-                      {item.currency} {item.price}
-                    </p>
-                    <p className="text-[0.86rem] leading-[1.5] text-stone-600">
-                      {item.reason ??
-                        "Works for this direction thanks to its clean silhouette and understated color balance."}
-                    </p>
-                    <a
-                      href={item.productUrl}
-                      className="inline-block pt-1 text-[10px] uppercase tracking-[0.14em] text-stone-900 transition-opacity duration-200 hover:opacity-70"
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      View piece
-                    </a>
-                  </div>
-                </article>
-              ))}
+              {message.products.map((item) => {
+                const canLink = isHttpProductUrl(item.productUrl);
+                const shell =
+                  "group block overflow-hidden border border-[rgba(37,35,33,0.12)] bg-[#f3f0ea] transition-colors duration-200 " +
+                  (canLink ? "hover:bg-[#efebe4] cursor-pointer" : "cursor-default");
+                const body = (
+                  <>
+                    <div
+                      className="aspect-[4/5] bg-[#ddd8d0] bg-cover bg-center transition-transform duration-300 group-hover:scale-[1.01]"
+                      style={item.imageUrl ? { backgroundImage: `url(${item.imageUrl})` } : undefined}
+                      aria-hidden
+                    />
+                    <div className="space-y-2 p-4">
+                      <p className="text-[10px] uppercase tracking-[0.18em] text-stone-500">{item.store}</p>
+                      <h3 className="font-editorial text-[1.2rem] leading-[1.1] tracking-[-0.02em] text-stone-900 line-clamp-3">
+                        {item.title}
+                      </h3>
+                      {item.slotLabel ? (
+                        <p className="text-[0.8rem] leading-snug text-stone-500">{item.slotLabel}</p>
+                      ) : null}
+                      <p className="text-[0.92rem] tabular-nums leading-[1.55] text-stone-800">
+                        {item.currency}{" "}
+                        {item.price.toLocaleString(undefined, {
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 2,
+                        })}
+                      </p>
+                      {item.websiteHost ? (
+                        <p className="text-[0.8rem] leading-snug text-stone-500">{item.websiteHost}</p>
+                      ) : null}
+                      <p className="text-[0.86rem] leading-[1.5] text-stone-600">
+                        {item.reason ??
+                          "Works for this direction thanks to its clean silhouette and understated color balance."}
+                      </p>
+                      {canLink ? (
+                        <p className="pt-0.5 text-[10px] uppercase tracking-[0.14em] text-stone-400">Open listing →</p>
+                      ) : null}
+                    </div>
+                  </>
+                );
+                return (
+                  <article key={item.id} className="min-w-0">
+                    {canLink ? (
+                      <a href={item.productUrl} target="_blank" rel="noreferrer" className={shell}>
+                        {body}
+                      </a>
+                    ) : (
+                      <div className={shell}>{body}</div>
+                    )}
+                  </article>
+                );
+              })}
             </div>
           )}
         </>

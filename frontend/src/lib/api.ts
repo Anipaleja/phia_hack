@@ -125,12 +125,18 @@ export type SearchRequest = {
 
 export type SearchItem = {
   id: string;
+  /** Primary label: retailer listing title when available, else outfit slot name */
   title: string;
+  /** When `title` is the listing name, this is the AI garment slot (e.g. Oxford shirt) */
+  slotLabel?: string;
   price: number;
   currency: string;
   imageUrl: string;
   productUrl: string;
+  /** Brand / retailer */
   store: string;
+  /** Store website hostname (e.g. nordstrom.com), derived from product URL */
+  websiteHost?: string;
   score: number;
   reason?: string;
 };
@@ -282,6 +288,21 @@ function titleCase(s: string) {
     .join(" ");
 }
 
+/** True when the piece can safely open in a new tab */
+export function isHttpProductUrl(url: string): boolean {
+  return /^https?:\/\//i.test(url);
+}
+
+function websiteHostFromUrl(url: string | undefined): string | undefined {
+  if (!url || url === "#") return undefined;
+  try {
+    const host = new URL(url).hostname.replace(/^www\./i, "");
+    return host || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * Map backend outfit items to UI cards.
  */
@@ -289,14 +310,18 @@ export function mapOutfitToSearchItems(outfit: BackendOutfitItem[]): SearchItem[
   return outfit.map((it, index) => {
     const price = pickDisplayPrice(it);
     const imageUrl = price?.imageUrl ?? it.images?.[0]?.url ?? "";
+    const slotName = titleCase(it.item || "Item");
+    const listingName = price?.productName?.trim();
     return {
       id: `${it.item}-${index}`,
-      title: titleCase(it.item || "Item"),
+      title: listingName || slotName,
+      slotLabel: listingName ? slotName : undefined,
       price: price?.price ?? 0,
       currency: price?.currency ?? "USD",
       imageUrl,
       productUrl: price?.productUrl ?? "#",
       store: price?.retailer ?? "Shop",
+      websiteHost: websiteHostFromUrl(price?.productUrl),
       score: 0.9,
       reason: [it.style, it.color, it.material].filter(Boolean).join(" · "),
     };
